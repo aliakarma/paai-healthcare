@@ -1,0 +1,12 @@
+[
+  {"drug": "ACE_inhibitor", "food": "potassium_rich_foods", "interaction": "hyperkalemia_risk", "severity": "moderate", "action": "limit_potassium_intake", "guideline": "AHA_2023"},
+  {"drug": "ACE_inhibitor", "food": "NSAIDs", "interaction": "reduced_antihypertensive_effect", "severity": "moderate", "action": "avoid_concurrent_use", "guideline": "AHA_2023"},
+  {"drug": "metformin", "food": "alcohol", "interaction": "lactic_acidosis_risk", "severity": "high", "action": "avoid_alcohol", "guideline": "ADA_2024"},
+  {"drug": "metformin", "food": "high_carb_meal", "interaction": "postprandial_glucose_spike", "severity": "low", "action": "take_with_meal", "guideline": "ADA_2024"},
+  {"drug": "statin", "food": "grapefruit", "interaction": "increased_statin_concentration", "severity": "high", "action": "avoid_grapefruit", "guideline": "AHA_2023"},
+  {"drug": "statin", "food": "high_fat_meal", "interaction": "reduced_absorption", "severity": "low", "action": "take_at_bedtime", "guideline": "AHA_2023"},
+  {"drug": "warfarin", "food": "vitamin_k_rich_foods", "interaction": "INR_alteration", "severity": "high", "action": "consistent_vitamin_k_intake", "guideline": "AHA_2023"},
+  {"drug": "ARB", "food": "potassium_supplements", "interaction": "hyperkalemia_risk", "severity": "moderate", "action": "monitor_potassium", "guideline": "AHA_2023"},
+  {"drug": "ACE_inhibitor", "food": "salt_substitutes", "interaction": "hyperkalemia_risk", "severity": "moderate", "action": "avoid_kcl_substitutes", "guideline": "AHA_2023"},
+  {"drug": "metformin", "food": "iodinated_contrast", "interaction": "lactic_acidosis_risk", "severity": "high", "action": "hold_48h_before_contrast", "guideline": "ADA_2024"}
+]

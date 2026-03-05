@@ -1,0 +1,18 @@
+# ============================================================
+# Knowledge graph configuration
+# ============================================================
+
+sources:
+  drug_food: data/knowledge_graph/drug_food_triples.json
+  contraindications: data/knowledge_graph/condition_contraindications.json
+  nutrients: data/knowledge_graph/nutrient_deficiency.json
+  schema: data/knowledge_graph/kg_schema.ttl
+
+query_backend: networkx   # options: networkx | rdflib | sparql
+update_schedule_days: 90  # quarterly guideline review
+
+clinical_guidelines:
+  - ADA_2024
+  - AHA_2023
+  - WHO_USDA_dietary
+  - DrugBank_v5

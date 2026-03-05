@@ -1,0 +1,9 @@
+[
+  {"condition": "type2_diabetes", "nutrient": "vitamin_D", "deficiency_risk": "high", "recommended_daily": "2000IU", "food_sources": ["fatty_fish", "egg_yolk", "fortified_milk"]},
+  {"condition": "type2_diabetes", "nutrient": "magnesium", "deficiency_risk": "high", "recommended_daily": "400mg", "food_sources": ["leafy_greens", "nuts", "legumes"]},
+  {"condition": "hypertension", "nutrient": "potassium", "deficiency_risk": "moderate", "recommended_daily": "3500mg", "food_sources": ["banana", "potato", "spinach"]},
+  {"condition": "hypertension", "nutrient": "calcium", "deficiency_risk": "low", "recommended_daily": "1000mg", "food_sources": ["dairy", "broccoli", "almonds"]},
+  {"condition": "ckd", "nutrient": "phosphorus", "deficiency_risk": "excess_risk", "recommended_daily": "below_800mg", "food_sources_avoid": ["processed_foods", "dark_cola"]},
+  {"condition": "copd", "nutrient": "vitamin_C", "deficiency_risk": "high", "recommended_daily": "120mg", "food_sources": ["citrus", "bell_pepper", "kiwi"]},
+  {"drug": "metformin", "nutrient": "vitamin_B12", "deficiency_risk": "high", "mechanism": "impaired_absorption", "monitoring": "annual_B12_serum"}
+]

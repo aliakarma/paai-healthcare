@@ -1,0 +1,78 @@
+# ============================================================
+# Synthetic patient generation parameters
+# Calibrated against NHANES 2017-2020 and WHO epidemiological data
+# ============================================================
+
+seed: 42
+n_patients: 500
+simulation_months: 12
+timestep_minutes: 5          # CGM-like 5-minute resolution
+
+demographics:
+  age:
+    distribution: normal
+    mean: 58.4
+    std: 12.1
+    min: 35
+    max: 85
+  sex_ratio_female: 0.52
+  bmi:
+    distribution: normal
+    mean: 29.3
+    std: 5.8
+    min: 18.5
+    max: 52.0
+
+conditions:
+  hypertension: 0.62
+  type2_diabetes: 0.48
+  hyperlipidemia: 0.41
+  obesity: 0.35
+  ckd: 0.18
+  copd: 0.12
+
+vitals:
+  systolic_bp:
+    mean_by_condition:
+      healthy: 118
+      hypertension: 148
+    std: 14
+    min: 80
+    max: 260
+  diastolic_bp:
+    mean_by_condition:
+      healthy: 76
+      hypertension: 92
+    std: 9
+    min: 40
+    max: 150
+  fasting_glucose_mgdl:
+    mean_by_condition:
+      healthy: 88
+      diabetes: 162
+    std: 22
+    min: 40
+    max: 500
+  heart_rate_bpm:
+    mean: 72
+    std: 11
+    min: 40
+    max: 160
+  spo2_percent:
+    mean: 97.8
+    std: 1.2
+    min: 85
+    max: 100
+
+adherence:
+  mean_medication_adherence: 0.74
+  mean_dietary_adherence: 0.52
+  dose_delay_prob: 0.18
+  dose_miss_prob: 0.09
+  adherence_memory_days: 7
+
+rare_events:
+  hypertensive_urgency_rate_per_year: 0.08
+  hypoglycemic_event_rate_per_year: 0.12
+  er_visit_rate_per_year: 0.05
+  event_persistence_hours: 2

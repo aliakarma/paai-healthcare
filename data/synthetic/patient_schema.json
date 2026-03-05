@@ -1,0 +1,35 @@
+{
+  "description": "Schema for synthetic patient records in AgHealth+",
+  "version": "1.0",
+  "patients_static": {
+    "patient_id":        {"type": "int",    "description": "Unique patient identifier"},
+    "age":               {"type": "float",  "unit": "years"},
+    "sex":               {"type": "string", "values": ["M", "F"]},
+    "bmi":               {"type": "float",  "unit": "kg/m2"},
+    "hypertension":      {"type": "bool"},
+    "type2_diabetes":    {"type": "bool"},
+    "hyperlipidemia":    {"type": "bool"},
+    "obesity":           {"type": "bool"},
+    "ckd":               {"type": "bool"},
+    "copd":              {"type": "bool"},
+    "sbp_baseline":      {"type": "float",  "unit": "mmHg"},
+    "dbp_baseline":      {"type": "float",  "unit": "mmHg"},
+    "glucose_baseline":  {"type": "float",  "unit": "mg/dL"},
+    "hr_baseline":       {"type": "float",  "unit": "bpm"},
+    "spo2_baseline":     {"type": "float",  "unit": "%"},
+    "n_medications":     {"type": "int"}
+  },
+  "vitals_longitudinal": {
+    "patient_id":        {"type": "int"},
+    "t_minutes":         {"type": "int",    "description": "Minutes since simulation start"},
+    "sbp":               {"type": "float",  "unit": "mmHg", "range": [80, 260]},
+    "dbp":               {"type": "float",  "unit": "mmHg", "range": [40, 150]},
+    "glucose_mgdl":      {"type": "float",  "unit": "mg/dL","range": [40, 500]},
+    "heart_rate":        {"type": "float",  "unit": "bpm",  "range": [40, 160]},
+    "spo2":              {"type": "float",  "unit": "%",    "range": [85, 100]},
+    "adherence_med":     {"type": "float",  "range": [0, 1]},
+    "adherence_diet":    {"type": "float",  "range": [0, 1]},
+    "event_type":        {"type": "string", "nullable": true,
+                          "values": ["hypertensive_urgency", "hypoglycemic_event", "er_visit"]}
+  }
+}

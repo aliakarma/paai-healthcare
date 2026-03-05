@@ -1,0 +1,39 @@
+# ============================================================
+# Constrained PPO (MaskablePPO + Lagrangian) training config
+# ============================================================
+
+algorithm: MaskablePPO
+total_timesteps: 2_000_000
+n_envs: 8
+n_steps: 2048
+batch_size: 256
+n_epochs: 10
+learning_rate: 3.0e-4
+gamma: 0.99
+gae_lambda: 0.95
+clip_range: 0.2
+ent_coef: 0.01
+vf_coef: 0.5
+max_grad_norm: 0.5
+
+lagrangian:
+  constraint_threshold: 0.05
+  lagrangian_lr: 0.01
+  lambda_init: 1.0
+  lambda_max: 10.0
+
+reward:
+  lambda_adherence: 0.3
+  lambda_safety: 2.0
+  clinical_stability_weight: 1.0
+  bp_target_systolic: [120, 130]
+  glucose_tir_target: [70, 180]
+  constraint_violation_penalty: -10.0
+  escalation_event_penalty: -5.0
+
+checkpoint_freq: 50000
+checkpoint_dir: rl/checkpoints/
+tensorboard_dir: rl/tensorboard/
+
+eval_freq: 100000
+eval_episodes: 20

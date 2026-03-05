@@ -1,0 +1,28 @@
+{
+  "automatic_escalation": {
+    "systolic_bp_mmhg_gte": 180,
+    "glucose_mgdl_lte": 54,
+    "glucose_mgdl_gte": 400,
+    "spo2_pct_lte": 90,
+    "heart_rate_bpm_lte": 40,
+    "heart_rate_bpm_gte": 130
+  },
+  "watch_and_repeat": {
+    "systolic_bp_mmhg_gte": 160,
+    "glucose_mgdl_lte": 70,
+    "glucose_mgdl_gte": 300,
+    "spo2_pct_lte": 93,
+    "repeat_after_minutes": [20, 40]
+  },
+  "escalation_packet_fields": [
+    "patient_pseudonym",
+    "timestamp",
+    "triggering_vital",
+    "trend_last_30min",
+    "current_medications",
+    "recent_actions_tried",
+    "adherence_last_7days"
+  ],
+  "consent_required": true,
+  "encrypt_packet": true
+}

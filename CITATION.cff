@@ -1,0 +1,48 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "AgHealth+: Privacy-Aware Agentic AI for IoT Healthcare (PAAI Framework)"
+abstract: >
+  Official implementation of the PAAI framework — a four-layer constrained
+  reinforcement learning and BDI multi-agent architecture for chronic disease
+  management in IoT healthcare. Combines a custom Gymnasium environment,
+  MaskablePPO with Lagrangian safety constraints, a hash-chained audit log,
+  and a three-tier Human-in-the-Loop governance model. Validated on a
+  12-month synthetic cohort of 500 patients and on MIMIC-IV real ICU data.
+authors:
+  - family-names: Syed
+    given-names: Toqeer Ali
+    affiliation: "Faculty of Computer and Information System, Islamic University of Madinah"
+    email: toqeer@iu.edu.sa
+  - family-names: Akarma
+    given-names: Ali
+    affiliation: "Faculty of Computer and Information System, Islamic University of Madinah"
+  - family-names: Ali
+    given-names: Ahmad
+    affiliation: "Faculty of Computer and Information System, Islamic University of Madinah"
+  - family-names: Lee
+    given-names: It Ee
+    affiliation: "Multimedia University, Cyberjaya"
+  - family-names: Jan
+    given-names: Salman
+    affiliation: "Arab Open University, Bahrain"
+  - family-names: Khan
+    given-names: Sohail
+    affiliation: "Effat University, Jeddah"
+  - family-names: Nauman
+    given-names: Muhammad
+    affiliation: "Effat University, Jeddah"
+repository-code: "https://github.com/toqeersyed/paai-healthcare"
+license: Apache-2.0
+version: "1.0.0"
+date-released: "2025-01-01"
+keywords:
+  - agentic AI
+  - IoT healthcare
+  - reinforcement learning
+  - BDI agents
+  - privacy-preserving
+  - human-in-the-loop
+  - chronic disease management
+  - MIMIC-IV
+  - constrained MDP

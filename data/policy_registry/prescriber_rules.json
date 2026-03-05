@@ -1,0 +1,33 @@
+{
+  "sodium_cap_g_per_day": {
+    "hypertension": 2.3,
+    "heart_failure": 1.5,
+    "healthy": 3.5
+  },
+  "caffeine_restriction": {
+    "hypertension": {"after_hour": 14, "max_mg_per_day": 200},
+    "arrhythmia": {"max_mg_per_day": 0},
+    "healthy": {"max_mg_per_day": 400}
+  },
+  "timing_windows": {
+    "ACE_inhibitor": {"preferred_time": "morning", "window_hours": [6, 10]},
+    "ARB": {"preferred_time": "morning", "window_hours": [6, 10]},
+    "metformin": {"preferred_time": "with_meal", "max_delay_minutes": 30},
+    "statin": {"preferred_time": "evening", "window_hours": [20, 23]},
+    "beta_blocker": {"preferred_time": "morning", "window_hours": [6, 9]}
+  },
+  "dose_ceilings": {
+    "metformin_mg_per_day": 2000,
+    "ACE_inhibitor_lisinopril_mg": 40,
+    "statin_rosuvastatin_mg": 40,
+    "ARB_losartan_mg": 100
+  },
+  "renal_adjustments": {
+    "metformin": {"hold_if_egfr_below": 30, "reduce_if_egfr_below": 45},
+    "ACE_inhibitor": {"monitor_if_egfr_below": 30, "potassium_check_days": 7},
+    "ARB": {"monitor_if_egfr_below": 30}
+  },
+  "hepatic_monitoring": {
+    "statin": {"ast_alt_threshold_x_uln": 3, "action": "hold_and_escalate"}
+  }
+}

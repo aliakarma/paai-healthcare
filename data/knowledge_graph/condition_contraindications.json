@@ -1,0 +1,10 @@
+[
+  {"condition": "ckd", "drug": "metformin", "contraindication": "egfr_below_30", "severity": "absolute", "alternative": "insulin_basal", "guideline": "ADA_2024"},
+  {"condition": "ckd", "drug": "NSAIDs", "contraindication": "nephrotoxicity", "severity": "high", "alternative": "paracetamol", "guideline": "KDIGO_2024"},
+  {"condition": "copd", "drug": "beta_blocker_nonselective", "contraindication": "bronchospasm", "severity": "high", "alternative": "beta1_selective", "guideline": "GOLD_2023"},
+  {"condition": "hypertension", "drug": "pseudoephedrine", "contraindication": "BP_elevation", "severity": "moderate", "alternative": "nasal_saline", "guideline": "AHA_2023"},
+  {"condition": "type2_diabetes", "drug": "corticosteroids", "contraindication": "hyperglycemia", "severity": "moderate", "alternative": "monitor_glucose_closely", "guideline": "ADA_2024"},
+  {"condition": "hyperlipidemia", "food": "trans_fats", "contraindication": "LDL_elevation", "severity": "high", "alternative": "unsaturated_fats", "guideline": "AHA_2023"},
+  {"condition": "ckd", "food": "high_protein", "contraindication": "nitrogen_load", "severity": "moderate", "alternative": "protein_0.8g_per_kg", "guideline": "KDIGO_2024"},
+  {"condition": "hypertension", "food": "high_sodium", "contraindication": "BP_elevation", "severity": "moderate", "alternative": "sodium_below_2.3g_day", "guideline": "AHA_2023"}
+]

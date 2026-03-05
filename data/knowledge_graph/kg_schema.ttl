@@ -1,0 +1,22 @@
+@prefix paai: <http://paai.iu.edu.sa/ontology#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+paai:Drug rdf:type owl:Class ; rdfs:label "Drug" .
+paai:Food rdf:type owl:Class ; rdfs:label "Food" .
+paai:Condition rdf:type owl:Class ; rdfs:label "ClinicalCondition" .
+paai:Nutrient rdf:type owl:Class ; rdfs:label "Nutrient" .
+paai:Interaction rdf:type owl:Class ; rdfs:label "DrugFoodInteraction" .
+
+paai:interactsWith rdf:type owl:ObjectProperty ;
+  rdfs:domain paai:Drug ; rdfs:range paai:Food .
+paai:contraIndicatedIn rdf:type owl:ObjectProperty ;
+  rdfs:domain paai:Drug ; rdfs:range paai:Condition .
+paai:deficientIn rdf:type owl:ObjectProperty ;
+  rdfs:domain paai:Condition ; rdfs:range paai:Nutrient .
+paai:severity rdf:type owl:DatatypeProperty ;
+  rdfs:range xsd:string .
+paai:guideline rdf:type owl:DatatypeProperty ;
+  rdfs:range xsd:string .

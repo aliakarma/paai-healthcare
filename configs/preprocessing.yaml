@@ -1,0 +1,37 @@
+# ============================================================
+# Signal preprocessing parameters — Table 1 in paper
+# Theta parameterisation
+# ============================================================
+
+denoise:
+  filter_type: median
+  window_points: 5
+  dropout_bridge_seconds: 10
+
+normalisation:
+  method: zscore_per_channel
+  channel_means:
+    sbp: 130.0
+    dbp: 82.0
+    glucose_mgdl: 110.0
+    heart_rate: 72.0
+    spo2: 97.5
+  channel_stds:
+    sbp: 20.0
+    dbp: 12.0
+    glucose_mgdl: 40.0
+    heart_rate: 12.0
+    spo2: 2.0
+
+features:
+  rolling_windows_minutes: [5, 15, 60]
+  compute_slope: true
+  compute_volatility: true
+  compute_zscore: true
+
+anomaly_gating:
+  tolerance_window_minutes: 10
+  trend_windows:
+    bp_minutes: 30
+    glucose_minutes: 60
+    heart_rate_minutes: 15

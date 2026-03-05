@@ -1,0 +1,39 @@
+# ============================================================
+# MIMIC-IV cohort extraction parameters
+# ============================================================
+
+inclusion_criteria:
+  icd10_codes:
+    hypertension: ["I10", "I11", "I12", "I13", "I15"]
+    diabetes_t2: ["E11", "E11.9", "E11.65"]
+  age_min: 35
+  age_max: 85
+  icu_stay_hours_min: 24
+
+exclusion_criteria:
+  - end_stage_renal_disease
+  - type1_diabetes
+  - pregnancy
+
+tables:
+  - chartevents
+  - labevents
+  - prescriptions
+  - diagnoses_icd
+  - icustays
+
+itemids:
+  systolic_bp: [220179, 220050]
+  diastolic_bp: [220180, 220051]
+  heart_rate: [220045]
+  spo2: [220277]
+  glucose: [220621, 226537]
+
+escalation_ground_truth:
+  hypertensive_urgency: ["I16", "I16.0", "I16.1"]
+  hypoglycemia: ["E11.641", "E11.649"]
+
+output:
+  cohort_csv: data/mimic/extracted/cohort.csv
+  max_patients: 500
+  random_seed: 42

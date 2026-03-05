@@ -1,0 +1,34 @@
+# ============================================================
+# Clinical escalation thresholds (Gamma in paper)
+# Based on AHA/ADA/ESC 2023 guidelines
+# ============================================================
+
+blood_pressure:
+  systolic_urgent: 180
+  systolic_emergency: 210
+  diastolic_urgent: 110
+  diastolic_emergency: 130
+  trend_window_minutes: 30
+
+glucose:
+  hypoglycemia_mild: 70
+  hypoglycemia_severe: 54
+  hyperglycemia_alert: 300
+  hyperglycemia_emergency: 400
+  trend_window_minutes: 60
+
+heart_rate:
+  bradycardia: 45
+  tachycardia: 120
+  trend_window_minutes: 15
+
+spo2:
+  alert: 93
+  emergency: 90
+
+repeat_measurement:
+  first_repeat_minutes: 20
+  second_repeat_minutes: 40
+  persistence_threshold: 0.7
+
+event_tolerance_minutes: 10

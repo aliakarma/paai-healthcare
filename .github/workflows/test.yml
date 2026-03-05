@@ -1,0 +1,55 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install numpy pandas scipy scikit-learn pyyaml cryptography \
+                      stable-baselines3 sb3-contrib gymnasium torch \
+                      statsmodels matplotlib seaborn pytest pytest-cov
+
+      - name: Generate 10-patient sample cohort
+        run: |
+          python data/synthetic/generate_patients.py \
+            --sample 10 --output_dir /tmp/cohort_sample
+
+      - name: Run unit and integration tests
+        run: |
+          pytest tests/ -v \
+            --cov=. \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            -x
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false

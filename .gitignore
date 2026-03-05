@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.env
+*.key
+
+# Generated cohort (re-run generate_patients.py)
+data/synthetic/cohort/
+
+# MIMIC-IV — NEVER COMMIT (PhysioNet DUA)
+data/mimic/raw/
+data/mimic/extracted/vitals_mimic.csv
+data/mimic/extracted/events_mimic.csv
+
+# RL training artefacts (distribute via GitHub Releases)
+rl/checkpoints/*.zip
+rl/checkpoints/best/
+rl/tensorboard/
+
+# Evaluation outputs
+evaluation/results/
+
+# Encryption keys
+*.key
+secrets/
+
+# IDE & misc
+.vscode/
+.idea/
+*.DS_Store
+venv/
+.venv/
+notebooks/.ipynb_checkpoints/
+.pytest_cache/
+coverage.xml
+.coverage
+htmlcov/
