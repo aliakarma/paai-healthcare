@@ -271,4 +271,4 @@ If you use this code or framework in your research, please cite:
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
+Apache 2.0 — see (LICENSE).
