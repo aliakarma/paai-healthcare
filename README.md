@@ -76,128 +76,131 @@ python evaluation/run_evaluation.py --mode all
 
 paai-healthcare/
 │
-├── [P1] setup.py                    ← package install, console scripts
-├── [P1] requirements.txt            ← pinned deps (numpy, torch, sb3, gymnasium…)
-├── [P1] LICENSE                     ← Apache-2.0
-├── [P1] CITATION.cff                ← CFF citation metadata
-├── [P1] README.md
-├── [P1] MERGE_GUIDE.md              ← step-by-step unzip & verify instructions
-├── [P1] verify_merge.py             ← 5-step merge verifier
+├── setup.py # package install, console scripts
+├── requirements.txt # pinned dependencies (numpy, torch, sb3, gymnasium…)
+├── LICENSE # Apache-2.0
+├── CITATION.cff # CFF citation metadata
+├── README.md
+├── MERGE_GUIDE.md # step-by-step unzip & verify instructions
+├── verify_merge.py # 5-step merge verifier
 │
-├── [P1] configs/
-│   ├── patient_sim.yaml             ← 500 patients, 12-month sim parameters
-│   ├── rl_training.yaml             ← PPO/Lagrangian hypers + reward weights
-│   ├── escalation_thresholds.yaml   ← SBP/glucose/SpO₂ alert thresholds
-│   ├── preprocessing.yaml           ← denoise, rolling-window, anomaly gates
-│   ├── mimic_extraction.yaml        ← MIMIC-IV cohort SQL + feature spec
-│   └── knowledge_graph.yaml         ← RDF endpoint, guideline sources
+├── configs/
+│ ├── patient_sim.yaml # 500 patients, 12-month simulation parameters
+│ ├── rl_training.yaml # PPO/Lagrangian hyperparameters + reward weights
+│ ├── escalation_thresholds.yaml # SBP/glucose/SpO₂ alert thresholds
+│ ├── preprocessing.yaml # denoise, rolling-window, anomaly gates
+│ ├── mimic_extraction.yaml # MIMIC-IV cohort SQL + feature specification
+│ └── knowledge_graph.yaml # RDF endpoint and guideline sources
 │
-├── [P1] data/
-│   ├── synthetic/
-│   │   ├── generate_patients.py     ← 500-patient longitudinal generator (Algorithm 1 input)
-│   │   ├── adherence_model.py       ← stochastic dose-miss model
-│   │   ├── hazard_model.py          ← rare event injection (hypo/hypertensive)
-│   │   └── patient_schema.json
-│   ├── knowledge_graph/
-│   │   ├── drug_food_triples.json   ← DrugBank-derived drug–food pairs
-│   │   ├── condition_contraindications.json  ← ADA/AHA contraindications
-│   │   ├── nutrient_deficiency.json ← WHO/USDA nutrient links
-│   │   └── kg_schema.ttl
-│   ├── policy_registry/
-│   │   ├── prescriber_rules.json    ← dose ceilings, timing windows, sodium caps
-│   │   ├── allergy_exclusions.json  ← allergen → exclude tags
-│   │   ├── escalation_criteria.json ← watch/escalate vital thresholds
-│   │   └── validate_registry.py     ← JSON schema validator
-│   └── [P4] mimic/
-│       ├── extract_cohort.py        ← MIMIC-IV SQL cohort builder
-│       └── README.md
+├── data/
+│ ├── synthetic/
+│ │ ├── generate_patients.py # 500-patient longitudinal generator
+│ │ ├── adherence_model.py # stochastic medication adherence model
+│ │ ├── hazard_model.py # rare event injection (hypoglycemia / hypertensive)
+│ │ └── patient_schema.json
+│ │
+│ ├── knowledge_graph/
+│ │ ├── drug_food_triples.json # DrugBank-derived drug–food pairs
+│ │ ├── condition_contraindications.json # ADA/AHA contraindications
+│ │ ├── nutrient_deficiency.json # WHO/USDA nutrient links
+│ │ └── kg_schema.ttl
+│ │
+│ ├── policy_registry/
+│ │ ├── prescriber_rules.json # dose ceilings, timing windows, sodium caps
+│ │ ├── allergy_exclusions.json # allergen → exclusion tags
+│ │ ├── escalation_criteria.json # watch / escalate vital thresholds
+│ │ └── validate_registry.py # JSON schema validator
+│ │
+│ └── mimic/
+│ ├── extract_cohort.py # MIMIC-IV SQL cohort builder
+│ └── README.md
 │
-├── [P1] preprocessing/
-│   ├── signal_pipeline.py           ← Algorithm 1: denoise→normalise→featurise→gate
-│   ├── denoise.py                   ← median filter, dropout bridging
-│   ├── normalise.py                 ← unit→SI + per-channel z-score
-│   └── feature_extraction.py        ← rolling mean/slope/z-score/volatility
+├── preprocessing/
+│ ├── signal_pipeline.py # Algorithm 1: denoise → normalise → featurise → gate
+│ ├── denoise.py # median filtering, dropout bridging
+│ ├── normalise.py # unit → SI conversion + per-channel z-score
+│ └── feature_extraction.py # rolling mean, slope, z-score, volatility
 │
-├── [P2] knowledge/
-│   ├── knowledge_graph.py           ← RDF/property-graph KG, SPARQL/Cypher
-│   ├── feature_store.py             ← Redis hot-path + Parquet long-term
-│   ├── policy_registry.py           ← concrete PolicyRegistry (implements Protocol)
-│   └── drug_checker.py              ← renal/hepatic constraint checker
+├── knowledge/
+│ ├── knowledge_graph.py # RDF/property graph interface (SPARQL/Cypher)
+│ ├── feature_store.py # Redis hot-path + Parquet long-term store
+│ ├── policy_registry.py # concrete PolicyRegistry implementation
+│ └── drug_checker.py # renal/hepatic safety constraint checker
 │
-├── [P2] agents/
-│   ├── base_agent.py                ← BaseAgent/BDIAgent — perceive/deliberate/act
-│   │                                   + execute()/update_beliefs() for orchestrator
-│   ├── medicine_agent.py            ← Listing 2: dose/timing/interaction checks
-│   ├── nutrition_agent.py           ← Listing 3: macro/micro meal planner
-│   ├── lifestyle_agent.py           ← Listing 4: sleep/walk/caffeine nudges
-│   └── emergency_agent.py           ← Listing 5 / Algorithm 3: watch-and-repeat
+├── agents/
+│ ├── base_agent.py # BaseAgent / BDI Agent (perceive → deliberate → act)
+│ ├── medicine_agent.py # medication dose/timing/interaction checks
+│ ├── nutrition_agent.py # macro/micro meal planning
+│ ├── lifestyle_agent.py # sleep/walking/caffeine behavioural nudges
+│ └── emergency_agent.py # emergency escalation agent
 │
-├── [P2] governance/
-│   ├── audit_log.py                 ← SHA-256 hash-chain, AES-encrypted audit log
-│   ├── consent_manager.py           ← GDPR/HIPAA consent scopes + tracking
-│   ├── encryption.py                ← Fernet key generation + data-at-rest
-│   └── hitl/
-│       ├── patient_feedback.py      ← one-tap feedback → RL reward loop
-│       ├── clinician_override.py    ← Tier 2 override with audit entry
-│       └── governance_review.py     ← quarterly policy drift review
+├── governance/
+│ ├── audit_log.py # SHA-256 hash-chain audit log
+│ ├── consent_manager.py # GDPR/HIPAA consent tracking
+│ ├── encryption.py # Fernet encryption utilities
+│ └── hitl/
+│ ├── patient_feedback.py # patient feedback → RL reward loop
+│ ├── clinician_override.py # Tier 2 override logging
+│ └── governance_review.py # governance committee policy review
 │
-├── [P3] orchestrator/
-│   ├── orchestrator.py              ← Algorithm 2 / Listing 1 — BDI orchestration
-│   ├── constraint_filter.py         ← Figure 2 — RL action constrained by registry
-│   ├── conflict_resolver.py         ← drug–food/lifestyle conflict resolution
-│   └── task_router.py               ← task-type → agent dispatch table
+├── orchestrator/
+│ ├── orchestrator.py # multi-agent BDI orchestrator
+│ ├── constraint_filter.py # RL action safety constraint layer
+│ ├── conflict_resolver.py # drug–food–lifestyle conflict resolution
+│ └── task_router.py # task → agent dispatch routing
 │
-├── [P3] envs/
-│   ├── spaces.py                    ← STATE_DIM=25, N_ACTIONS=5 CMDP constants
-│   ├── patient_env.py               ← Gymnasium PatientEnv with step/reset/render
-│   ├── reward_function.py           ← Eq.1 reward: stability + adherence − alarm
-│   └── constraint_set.py            ← Lagrangian safety constraint set C
+├── envs/
+│ ├── spaces.py # STATE_DIM=25, N_ACTIONS=5 constants
+│ ├── patient_env.py # Gymnasium PatientEnv implementation
+│ ├── reward_function.py # composite reward function
+│ └── constraint_set.py # Lagrangian safety constraint set
 │
-├── [P3] rl/
-│   ├── train.py                     ← PPO + Lagrangian multiplier training
-│   ├── callbacks.py                 ← SB3 callbacks: constraint monitor, policy saver
-│   ├── lagrangian.py                ← dual-variable update λ for CMDP
-│   ├── evaluate_policy.py           ← off-policy rollout + metric collection
-│   ├── checkpoints/                 ← saved policy weights (.gitkeep)
-│   └── tensorboard/                 ← training logs (.gitkeep)
+├── rl/
+│ ├── train.py # PPO + Lagrangian constraint training
+│ ├── callbacks.py # training callbacks and monitoring
+│ ├── lagrangian.py # dual-variable update λ
+│ ├── evaluate_policy.py # policy evaluation runner
+│ ├── checkpoints/ # saved policy weights
+│ └── tensorboard/ # training logs
 │
-├── [P3] baselines/
-│   ├── rules_only.py                ← B1: threshold rules, no learning (AUC 0.87)
-│   ├── predictive_only.py           ← B2: sklearn anomaly model (AUC 0.92)
-│   └── human_schedule.py            ← B3: static human-authored schedule
+├── baselines/
+│ ├── rules_only.py # baseline B1: rule-based thresholds
+│ ├── predictive_only.py # baseline B2: anomaly detection model
+│ └── human_schedule.py # baseline B3: static clinician schedule
 │
-├── [P4] evaluation/
-│   ├── run_evaluation.py            ← master runner: 500-patient synthetic eval
-│   ├── metrics.py                   ← ROC-AUC, precision/recall/F1, latency CDF
-│   ├── statistical_tests.py         ← DeLong, Wilcoxon, paired-t, Bonferroni
-│   ├── ablation.py                  ← no-KG / no-policy / no-orchestrator runs
-│   ├── mimic_evaluation.py          ← real-EHR evaluation harness (MIMIC-IV)
-│   └── plots/
-│       ├── plot_roc.py              ← Figure 3 — ROC curves
-│       ├── plot_med_quality.py      ← Figure 4 — precision/recall/F1 bars
-│       ├── plot_latency_cdf.py      ← Figure 5 — alert latency CDF
-│       ├── plot_adherence.py        ← Figure 6 — 8-week adherence trend
-│       └── plot_learning_curves.py  ← RL reward + constraint curves
+├── evaluation/
+│ ├── run_evaluation.py # full synthetic evaluation pipeline
+│ ├── metrics.py # ROC-AUC, precision/recall/F1, latency
+│ ├── statistical_tests.py # DeLong, Wilcoxon, Bonferroni tests
+│ ├── ablation.py # ablation experiments
+│ ├── mimic_evaluation.py # real-world EHR evaluation
+│ └── plots/
+│ ├── plot_roc.py
+│ ├── plot_med_quality.py
+│ ├── plot_latency_cdf.py
+│ ├── plot_adherence.py
+│ └── plot_learning_curves.py
 │
-├── [P4] tests/
-│   ├── test_signal_pipeline.py      ← denoise/normalise/featurise
-│   ├── test_agents.py               ← BDI cycle, execute(), safety gate
-│   ├── test_constraint_filter.py    ← filter blocks unsafe RL actions
-│   ├── test_audit_log.py            ← hash-chain tamper detection
-│   ├── test_reward_function.py      ← Eq.1 reward sanity checks
-│   └── test_orchestrator.py         ← end-to-end orchestration cycle
+├── tests/
+│ ├── test_signal_pipeline.py
+│ ├── test_agents.py
+│ ├── test_constraint_filter.py
+│ ├── test_audit_log.py
+│ ├── test_reward_function.py
+│ └── test_orchestrator.py
 │
-├── [P4] docs/
-│   ├── architecture.md              ← system diagram narrative + layer descriptions
-│   ├── rl_training_guide.md         ← how to train, resume, evaluate policies
-│   ├── mimic_setup.md               ← MIMIC-IV access, SQL extraction, FHIR notes
-│   └── hitl_guide.md                ← clinician dashboard, override, consent flows
+├── docs/
+│ ├── architecture.md
+│ ├── rl_training_guide.md
+│ ├── mimic_setup.md
+│ └── hitl_guide.md
 │
-└── [P4] .github/
-    ├── workflows/
-    │   ├── test.yml                 ← CI: pytest + flake8 on push/PR
-    │   └── lint.yml                 ← CI: black + mypy type checks
-    └── ISSUE_TEMPLATE/bug_report.md
+└── .github/
+├── workflows/
+│ ├── test.yml
+│ └── lint.yml
+└── ISSUE_TEMPLATE/
+└── bug_report.md
 
 ---
 
