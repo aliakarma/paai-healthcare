@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://python.org)
-[![Paper](https://img.shields.io/badge/DOI-10.32604%2Fjournal.2025.012345-orange)]()
+
 
 Official implementation of the **PAAI** framework — a four-layer,
 privacy-aware agentic AI architecture for chronic disease management
