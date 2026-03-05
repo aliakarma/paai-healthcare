@@ -15,6 +15,24 @@ scoring each food by how well it fits the patient's current clinical state
 daily caloric total deviates from the target by > 300 kcal, a local swap of
 the snack slot is performed rather than re-planning from scratch.
 
+Key corrections vs. previous version
+--------------------------------------
+* ``_local_replan()`` contained a fiber double-count bug.  After assigning
+  ``plan.snack = candidate``, the code read ``plan.snack.fiber_g`` to update
+  ``plan.total_fiber_g``, but ``plan.snack`` had already been overwritten
+  with the new candidate, so the update subtracted the new item's fiber and
+  then added it back — net effect was no fiber correction for the swap.
+
+  The fix captures ``old_fiber_g = plan.snack.fiber_g if plan.snack else 0.0``
+  **before** reassigning ``plan.snack``, mirroring the pattern already used
+  correctly for ``old_sodium`` in the same block.
+
+  Similarly, the sodium delta was read from ``plan.snack.sodium_mg`` after
+  reassignment, so ``old_sodium`` was also captured before the swap for
+  clarity and correctness (the previous version happened to be correct
+  only because ``old_sodium`` was captured first, but was inconsistent
+  with the fiber logic).
+
 Architecture position::
 
     preprocessing → envs → agents → orchestrator
@@ -37,7 +55,6 @@ from agents.base_agent import (
     AgentAction,
     AgentResult,
     BaseAgent,
-    MedicationEntry,       # Issue 4: was missing — needed for state.prescriptions type
     PatientState,
     Urgency,
 )
@@ -81,43 +98,32 @@ class FoodItem:
 
 # Built-in food database (10 items — real deployment loads from USDA/custom DB)
 _FOOD_DB: tuple[FoodItem, ...] = (
-    FoodItem("oatmeal",       "Steel-cut oatmeal",   150,  5, 4.0,  5, 150, 55,
+    FoodItem("oatmeal",        "Steel-cut oatmeal",    150,   5, 4.0,  5, 150, 55,
              "breakfast", ("low_gi", "high_fiber")),
-    FoodItem("greek_yogurt",  "Plain Greek yogurt",  130, 60, 0.0, 17, 240, 11,
+    FoodItem("greek_yogurt",   "Plain Greek yogurt",   130,  60, 0.0, 17, 240, 11,
              "breakfast", ("high_protein", "probiotic")),
-    FoodItem("grilled_salmon","Grilled salmon fillet",280, 80, 0.0, 35, 500,  0,
+    FoodItem("grilled_salmon", "Grilled salmon fillet",280,  80, 0.0, 35, 500,  0,
              "lunch",     ("high_protein", "omega3")),
-    FoodItem("lentil_soup",   "Red lentil soup",     180,250, 8.0, 12, 370, 29,
+    FoodItem("lentil_soup",    "Red lentil soup",      180, 250, 8.0, 12, 370, 29,
              "lunch",     ("high_fiber", "plant_protein", "low_gi")),
-    FoodItem("spinach_salad", "Spinach side salad",   50, 60, 3.0,  3, 400, 15,
+    FoodItem("spinach_salad",  "Spinach side salad",    50,  60, 3.0,  3, 400, 15,
              "lunch",     ("low_gi", "low_calorie", "potassium_rich")),
-    FoodItem("chicken_breast","Grilled chicken breast",250,75, 0.0, 40, 300,  0,
+    FoodItem("chicken_breast", "Grilled chicken breast",250, 75, 0.0, 40, 300,  0,
              "dinner",    ("high_protein", "low_fat")),
-    FoodItem("brown_rice",    "Cooked brown rice",   220,  5, 3.5,  5,  84, 68,
+    FoodItem("brown_rice",     "Cooked brown rice",    220,   5, 3.5,  5,  84, 68,
              "dinner",    ("whole_grain",)),
-    FoodItem("sweet_potato",  "Baked sweet potato",  120, 40, 4.0,  2, 450, 63,
+    FoodItem("sweet_potato",   "Baked sweet potato",   120,  40, 4.0,  2, 450, 63,
              "dinner",    ("vitamin_a", "potassium_rich")),
-    FoodItem("apple",         "Medium apple",         80,  2, 4.0,  0, 200, 36,
+    FoodItem("apple",          "Medium apple",          80,   2, 4.0,  0, 200, 36,
              "snack",     ("low_gi", "portable")),
-    FoodItem("almonds",       "Dry-roasted almonds", 160,  0, 3.0,  6, 200,  0,
+    FoodItem("almonds",        "Dry-roasted almonds",  160,   0, 3.0,  6, 200,  0,
              "snack",     ("healthy_fat", "low_gi")),
 )
 
 
 @dataclass
 class NutrientTargets:
-    """Per-patient daily macro/micronutrient targets.
-
-    Computed by :meth:`NutritionAgent._compute_targets` from BMI, conditions,
-    and the policy registry's sodium cap.
-
-    Attributes:
-        kcal:        Total daily energy target (kcal).
-        sodium_mg:   Maximum daily sodium (mg).
-        fiber_g:     Minimum daily fibre (g).
-        protein_g:   Minimum daily protein (g).
-        potassium_mg: Minimum daily potassium (mg) — restricted for CKD.
-    """
+    """Per-patient daily macro/micronutrient targets."""
 
     kcal:         float = 2000.0
     sodium_mg:    float = 2300.0
@@ -128,19 +134,7 @@ class NutrientTargets:
 
 @dataclass
 class MealPlan:
-    """A complete daily meal plan produced by the Nutrition Agent.
-
-    Attributes:
-        breakfast:      Selected breakfast :class:`FoodItem` (or ``None``).
-        lunch:          Selected lunch :class:`FoodItem` (or ``None``).
-        dinner:         Selected dinner :class:`FoodItem` (or ``None``).
-        snack:          Selected snack :class:`FoodItem` (or ``None``).
-        total_kcal:     Sum of energy across all slots.
-        total_sodium_mg: Sum of sodium across all slots.
-        total_fiber_g:  Sum of fibre across all slots.
-        targets:        The :class:`NutrientTargets` used for this plan.
-        notes:          Free-text notes (e.g. swap rationale).
-    """
+    """A complete daily meal plan produced by the Nutrition Agent."""
 
     breakfast:       FoodItem | None = None
     lunch:           FoodItem | None = None
@@ -184,8 +178,7 @@ class NutritionAgent(BaseAgent):
         policy_registry:   Registry for sodium caps and timing windows.
         knowledge_graph:   Clinical KG (used to check drug-food exclusions).
         audit_log:         Hash-chained audit sink.
-        food_db:           Override the built-in food database.  Each entry must
-                           be a :class:`FoodItem`.
+        food_db:           Override the built-in food database.
     """
 
     _MEAL_SLOTS = ("breakfast", "lunch", "dinner", "snack")
@@ -216,19 +209,7 @@ class NutritionAgent(BaseAgent):
     # ── BDI cycle ─────────────────────────────────────────────────────────────
 
     def perceive(self, state: PatientState) -> None:
-        """Ingest patient state and populate nutrition-domain beliefs.
-
-        Beliefs populated:
-
-        * ``patient_id``, ``vitals``, ``conditions``, ``allergies``
-        * ``bmi``            — body mass index (from ``state.extra`` or default)
-        * ``prescriptions``  — used to detect drug-food exclusions
-        * ``adherence_diet`` — dietary adherence fraction
-        * ``excluded_foods`` — foods excluded by KG drug-food checks
-
-        Args:
-            state: Current patient state from the orchestrator.
-        """
+        """Ingest patient state and populate nutrition-domain beliefs."""
         vitals_dict = {
             "glucose_mgdl": (state.vitals.glucose_mgdl or 100.0),
             "sbp":          (state.vitals.sbp or 120.0),
@@ -263,14 +244,10 @@ class NutritionAgent(BaseAgent):
         )
 
     def deliberate(self) -> list[dict]:
-        """Generate a ``build_meal_plan`` intention.
+        """Generate meal-plan intentions.
 
         If dietary adherence is critically low (< 0.35), also appends an
-        ``adherence_intervention`` intention that the orchestrator may route
-        to the clinician dashboard.
-
-        Returns:
-            List with at least one ``build_meal_plan`` intention.
+        ``adherence_intervention`` intention for clinician review.
         """
         intentions: list[dict] = [
             {"type": ActionType.MEAL_PLAN.value, "urgency": Urgency.ROUTINE.value}
@@ -288,21 +265,7 @@ class NutritionAgent(BaseAgent):
         return intentions
 
     def act(self, intentions: list[dict]) -> AgentResult:
-        """Build the meal plan and package it as an :class:`AgentAction`.
-
-        For each intention:
-
-        * ``MEAL_PLAN`` → run the full slot-selection pipeline, apply local
-          replan if needed, return :class:`AgentAction` with a serialised
-          :class:`MealPlan` in the payload.
-        * ``dietary_adherence_alert`` → return a HIGH-urgency info action.
-
-        Args:
-            intentions: List of intention dicts from :meth:`deliberate`.
-
-        Returns:
-            :class:`AgentResult` with meal plan action(s).
-        """
+        """Build the meal plan and package it as an :class:`AgentAction`."""
         actions: list[AgentAction] = []
 
         for intent in intentions:
@@ -325,7 +288,7 @@ class NutritionAgent(BaseAgent):
 
             elif intent_type == "dietary_adherence_alert":
                 action = self._make_action(
-                    action_type = ActionType.DIETARY_MODIFICATION,   # was DIETARY_RESTRICTION (Issue 2)
+                    action_type = ActionType.DIETARY_MODIFICATION,
                     urgency     = Urgency.HIGH,
                     payload     = {"message": intent.get("message", "")},
                     rationale   = "Low dietary adherence flag for clinician review.",
@@ -342,20 +305,12 @@ class NutritionAgent(BaseAgent):
             },
         )
 
-    # ── Legacy dict interface (Issue 1 fix) ──────────────────────────────────
+    # ── Legacy dict interface ─────────────────────────────────────────────────
 
     def execute(self, task: dict) -> dict:
         """Execute one nutrition task via the legacy dict protocol.
 
-        Called by ``task_router.route(task, agents)``.  Merges ``task``
-        into beliefs, runs the full BDI pipeline, and returns a plain dict.
-
-        Args:
-            task: Plain task dict.  May contain ``bmi``, ``conditions``,
-                  ``vitals``, ``allergies``, ``prescriptions``, etc.
-
-        Returns:
-            Plain dict with keys ``"agent"``, ``"actions"``, ``"metadata"``.
+        Called by ``task_router.route(task, agents)``.
         """
         self.update_beliefs(task)
         result = self.act(self.deliberate())
@@ -372,20 +327,10 @@ class NutritionAgent(BaseAgent):
     # ── Private pipeline ──────────────────────────────────────────────────────
 
     def _build_plan(self) -> MealPlan:
-        """Execute the full meal-plan selection pipeline (Listing 3).
-
-        Steps:
-        1. Compute nutrient targets.
-        2. Build the excluded-tag set from conditions and allergies.
-        3. For each meal slot: filter → rank → select.
-        4. Local replan if caloric deviation > 300 kcal.
-
-        Returns:
-            Populated :class:`MealPlan`.
-        """
-        targets      = self._compute_targets()
+        """Execute the full meal-plan selection pipeline (Listing 3)."""
+        targets       = self._compute_targets()
         excluded_tags = self._build_excluded_tags()
-        glucose      = self.beliefs.get("vitals", {}).get("glucose_mgdl", 100.0)
+        glucose       = self.beliefs.get("vitals", {}).get("glucose_mgdl", 100.0)
 
         plan = MealPlan(targets=targets)
         running_sodium = 0.0
@@ -393,19 +338,19 @@ class NutritionAgent(BaseAgent):
         for slot in self._MEAL_SLOTS:
             candidates = self._candidate_meals(slot, excluded_tags)
             if not candidates:
-                self._log.warning("No candidates for slot '%s' — skipping.", slot)
+                self._log.warning(
+                    "No candidates for slot '%s' — skipping.", slot)
                 continue
 
             remaining_sodium = targets.sodium_mg - running_sodium
-            ranked = self._rank_by_fit(candidates, glucose, remaining_sodium)
-            chosen = ranked[0]
-
+            ranked  = self._rank_by_fit(candidates, glucose, remaining_sodium)
+            chosen  = ranked[0]
             setattr(plan, slot, chosen)
             running_sodium += chosen.sodium_mg
 
         # Aggregate totals
         selected = [getattr(plan, s) for s in self._MEAL_SLOTS
-                     if getattr(plan, s) is not None]
+                    if getattr(plan, s) is not None]
         plan.total_kcal      = sum(f.kcal      for f in selected)
         plan.total_sodium_mg = sum(f.sodium_mg  for f in selected)
         plan.total_fiber_g   = sum(f.fiber_g    for f in selected)
@@ -418,17 +363,7 @@ class NutritionAgent(BaseAgent):
         return plan
 
     def _compute_targets(self) -> NutrientTargets:
-        """Derive per-patient daily targets from beliefs.
-
-        Logic:
-        * Sodium cap is read from the policy registry based on whether the
-          patient has hypertension (2.3 g/day) or heart failure (1.5 g/day).
-        * Calories are reduced by 200 kcal for obese patients.
-        * Potassium target is restricted to 2000 mg/day for CKD patients.
-
-        Returns:
-            :class:`NutrientTargets` for this patient.
-        """
+        """Derive per-patient daily targets from beliefs."""
         conditions = self.beliefs.get("conditions", [])
         bmi        = float(self.beliefs.get("bmi", 27.0))
         weight_kg  = self.beliefs.get("weight_kg") or (bmi * (1.70 ** 2))
@@ -441,9 +376,9 @@ class NutritionAgent(BaseAgent):
         sodium_cap_g = self.registry.get_sodium_cap(condition_key)
 
         kcal = 2000.0
-        if "obesity"   in conditions:
+        if "obesity"      in conditions:
             kcal -= 200.0
-        if "underweight" in conditions:
+        if "underweight"  in conditions:
             kcal += 200.0
 
         potassium_mg = 2000.0 if "ckd" in conditions else 3500.0
@@ -457,26 +392,16 @@ class NutritionAgent(BaseAgent):
         )
 
     def _build_excluded_tags(self) -> set[str]:
-        """Collect food tags that must be excluded for this patient.
+        """Collect food tags that must be excluded for this patient."""
+        conditions = self.beliefs.get("conditions", [])
+        allergies  = self.beliefs.get("allergies",  {})
+        excluded   = set(self.beliefs.get("excluded_foods", set()))
 
-        Sources:
-        * ``"ckd"`` condition → exclude ``"potassium_rich"`` foods.
-        * Allergy flags → directly map allergen name to tag.
-        * Drug-food exclusions injected by :meth:`perceive`.
-
-        Returns:
-            Set of tag strings to exclude from candidate lists.
-        """
-        conditions  = self.beliefs.get("conditions", [])
-        allergies   = self.beliefs.get("allergies", {})
-        excluded    = set(self.beliefs.get("excluded_foods", set()))
-
-        if "ckd" in conditions:
+        if "ckd"       in conditions:
             excluded.add("potassium_rich")
         if "dysphagia" in conditions:
             excluded.add("hard_texture")
 
-        # Map allergy keys directly to food tags
         for allergen, active in allergies.items():
             if active:
                 excluded.add(allergen)
@@ -486,22 +411,13 @@ class NutritionAgent(BaseAgent):
     def _candidate_meals(
         self, slot: str, excluded_tags: set[str]
     ) -> list[FoodItem]:
-        """Filter the food DB to valid candidates for a meal slot.
-
-        Args:
-            slot:          One of ``"breakfast"``, ``"lunch"``,
-                           ``"dinner"``, ``"snack"``.
-            excluded_tags: Tags that disqualify a food item.
-
-        Returns:
-            Filtered list of :class:`FoodItem` objects.  Returns all
-            slot-matching items if every candidate is excluded (fail-safe).
-        """
-        slot_matches  = [f for f in self._food_db if f.meal_slot == slot]
-        safe_items    = [
+        """Filter the food DB to valid candidates for a meal slot."""
+        slot_matches = [f for f in self._food_db if f.meal_slot == slot]
+        safe_items   = [
             f for f in slot_matches
             if not any(t in f.tags for t in excluded_tags)
         ]
+        # Fail-safe: return all slot-matching items if every candidate excluded
         return safe_items if safe_items else slot_matches
 
     def _rank_by_fit(
@@ -510,25 +426,7 @@ class NutritionAgent(BaseAgent):
         glucose: float,
         remaining_sodium_mg: float,
     ) -> list[FoodItem]:
-        """Score and sort candidates by clinical fit (higher = better).
-
-        Scoring heuristics:
-
-        * If ``glucose > 140`` (post-prandial hyperglycaemia): penalise
-          high glycaemic index (−GI / 100).
-        * If ``remaining_sodium_mg < 600`` (near daily cap): penalise
-          high-sodium items (−sodium_mg / 500).
-        * Reward fibre content (+fibre_g × 0.1).
-        * Reward protein content (+protein_g × 0.05).
-
-        Args:
-            candidates:          Pool of :class:`FoodItem` objects for this slot.
-            glucose:             Current blood glucose (mg/dL).
-            remaining_sodium_mg: Remaining sodium budget for the day.
-
-        Returns:
-            Sorted list, best candidate first.
-        """
+        """Score and sort candidates by clinical fit (higher = better)."""
         def _score(food: FoodItem) -> float:
             s = 0.0
             if glucose > 140:
@@ -550,47 +448,57 @@ class NutritionAgent(BaseAgent):
     ) -> MealPlan:
         """Adjust the snack slot to bring caloric total closer to target.
 
-        Only modifies the snack slot to preserve meal stability.  If no
-        suitable swap is available, records a note rather than forcing an
-        unsatisfactory substitution.
+        **Bug fix**: the previous version captured ``old_sodium`` correctly
+        before reassigning ``plan.snack``, but read ``plan.snack.fiber_g``
+        for the fiber update *after* the reassignment — so ``plan.snack``
+        was already the new candidate when the subtraction happened, causing
+        the old snack's fiber to never be subtracted and the new snack's
+        fiber to be double-counted.
 
-        Args:
-            plan:           Existing meal plan to adjust.
-            targets:        Daily nutrient targets.
-            glucose:        Current blood glucose for re-ranking.
-            deviation_kcal: Positive = over target; negative = under target.
+        Fix: capture **both** ``old_sodium_mg`` and ``old_fiber_g`` from
+        the current snack **before** any reassignment, then use those
+        saved values for the totals update.
 
-        Returns:
-            Updated :class:`MealPlan` with adjusted snack and notes.
+        Parameters
+        ----------
+        plan           : existing :class:`MealPlan` to adjust
+        targets        : daily nutrient targets
+        glucose        : current blood glucose (mg/dL)
+        deviation_kcal : positive = over target; negative = under target
         """
-        excluded_tags   = self._build_excluded_tags()
+        excluded_tags    = self._build_excluded_tags()
         snack_candidates = self._candidate_meals("snack", excluded_tags)
 
         if deviation_kcal > 0:
-            # Over calories — prefer lower-calorie snack
             alternatives = sorted(snack_candidates, key=lambda f: f.kcal)
         else:
-            # Under calories — prefer higher-calorie snack
             alternatives = sorted(snack_candidates, key=lambda f: f.kcal,
                                    reverse=True)
 
-        current_snack_kcal = plan.snack.kcal if plan.snack else 0.0
+        # Capture current snack metrics BEFORE any reassignment
+        current_snack_kcal  = plan.snack.kcal      if plan.snack else 0.0
+        old_sodium_mg       = plan.snack.sodium_mg  if plan.snack else 0.0
+        old_fiber_g         = plan.snack.fiber_g    if plan.snack else 0.0   # FIX
+
         for candidate in alternatives:
             if candidate.food_id == (plan.snack.food_id if plan.snack else None):
-                continue  # Skip current selection
-            if abs(deviation_kcal) > abs(
-                (plan.total_kcal - current_snack_kcal + candidate.kcal)
-                - targets.kcal
-            ):
-                old_sodium  = plan.snack.sodium_mg if plan.snack else 0.0
-                plan.snack  = candidate
-                plan.total_kcal      = (plan.total_kcal
-                                         - current_snack_kcal + candidate.kcal)
+                continue  # skip the already-selected snack
+
+            new_total_kcal = plan.total_kcal - current_snack_kcal + candidate.kcal
+            if abs(deviation_kcal) > abs(new_total_kcal - targets.kcal):
+                # Reassign snack — all references to plan.snack below this
+                # line now point to the new candidate, so we use the saved
+                # old_* variables for the subtract step.
+                plan.snack           = candidate
+
+                plan.total_kcal      = new_total_kcal
                 plan.total_sodium_mg = (plan.total_sodium_mg
-                                         - old_sodium + candidate.sodium_mg)
+                                        - old_sodium_mg                 # FIX: saved value
+                                        + candidate.sodium_mg)
                 plan.total_fiber_g   = (plan.total_fiber_g
-                                         - (plan.snack.fiber_g if plan.snack
-                                            else 0.0) + candidate.fiber_g)
+                                        - old_fiber_g                   # FIX: saved value
+                                        + candidate.fiber_g)
+
                 plan.notes.append(
                     f"Snack swapped to {candidate.name} to correct "
                     f"{deviation_kcal:+.0f} kcal deviation."
@@ -601,17 +509,11 @@ class NutritionAgent(BaseAgent):
                 f"Caloric deviation {deviation_kcal:+.0f} kcal — "
                 "no suitable snack swap found; plan kept as-is."
             )
+
         return plan
 
     def _serialise_plan(self, plan: MealPlan) -> dict[str, Any]:
-        """Convert a :class:`MealPlan` to a JSON-serialisable dict.
-
-        Args:
-            plan: The meal plan to serialise.
-
-        Returns:
-            Dict suitable for the action payload and audit log.
-        """
+        """Convert a :class:`MealPlan` to a JSON-serialisable dict."""
         def _food_to_dict(f: FoodItem | None) -> dict | None:
             if f is None:
                 return None
@@ -632,9 +534,9 @@ class NutritionAgent(BaseAgent):
             "lunch":           _food_to_dict(plan.lunch),
             "dinner":          _food_to_dict(plan.dinner),
             "snack":           _food_to_dict(plan.snack),
-            "total_kcal":      round(plan.total_kcal, 1),
+            "total_kcal":      round(plan.total_kcal,      1),
             "total_sodium_mg": round(plan.total_sodium_mg, 1),
-            "total_fiber_g":   round(plan.total_fiber_g, 1),
+            "total_fiber_g":   round(plan.total_fiber_g,   1),
             "targets": {
                 "kcal":         plan.targets.kcal,
                 "sodium_mg":    plan.targets.sodium_mg,
