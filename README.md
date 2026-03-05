@@ -74,17 +74,20 @@ python evaluation/run_evaluation.py --mode all
 
 ---
 
+## 📂 Repository Structure
+
+```bash
 paai-healthcare/
 │
-├── setup.py # package install, console scripts
-├── requirements.txt # pinned dependencies (numpy, torch, sb3, gymnasium…)
-├── LICENSE # Apache-2.0
-├── CITATION.cff # CFF citation metadata
-├── README.md
-├── MERGE_GUIDE.md # step-by-step unzip & verify instructions
-├── verify_merge.py # 5-step merge verifier
+├── ⚙️ setup.py # package install, console scripts
+├── 📦 requirements.txt # pinned dependencies (numpy, torch, sb3, gymnasium…)
+├── 📜 LICENSE # Apache-2.0 license
+├── 📖 CITATION.cff # citation metadata for academic use
+├── 📘 README.md
+├── 🧩 MERGE_GUIDE.md # step-by-step unzip & verify instructions
+├── ✅ verify_merge.py # repository merge verification script
 │
-├── configs/
+├── ⚙️ configs/
 │ ├── patient_sim.yaml # 500 patients, 12-month simulation parameters
 │ ├── rl_training.yaml # PPO/Lagrangian hyperparameters + reward weights
 │ ├── escalation_thresholds.yaml # SBP/glucose/SpO₂ alert thresholds
@@ -92,7 +95,7 @@ paai-healthcare/
 │ ├── mimic_extraction.yaml # MIMIC-IV cohort SQL + feature specification
 │ └── knowledge_graph.yaml # RDF endpoint and guideline sources
 │
-├── data/
+├── 🗄️ data/
 │ ├── synthetic/
 │ │ ├── generate_patients.py # 500-patient longitudinal generator
 │ │ ├── adherence_model.py # stochastic medication adherence model
@@ -115,26 +118,26 @@ paai-healthcare/
 │ ├── extract_cohort.py # MIMIC-IV SQL cohort builder
 │ └── README.md
 │
-├── preprocessing/
+├── 🔧 preprocessing/
 │ ├── signal_pipeline.py # Algorithm 1: denoise → normalise → featurise → gate
 │ ├── denoise.py # median filtering, dropout bridging
 │ ├── normalise.py # unit → SI conversion + per-channel z-score
 │ └── feature_extraction.py # rolling mean, slope, z-score, volatility
 │
-├── knowledge/
+├── 🧠 knowledge/
 │ ├── knowledge_graph.py # RDF/property graph interface (SPARQL/Cypher)
 │ ├── feature_store.py # Redis hot-path + Parquet long-term store
 │ ├── policy_registry.py # concrete PolicyRegistry implementation
 │ └── drug_checker.py # renal/hepatic safety constraint checker
 │
-├── agents/
+├── 🤖 agents/
 │ ├── base_agent.py # BaseAgent / BDI Agent (perceive → deliberate → act)
 │ ├── medicine_agent.py # medication dose/timing/interaction checks
 │ ├── nutrition_agent.py # macro/micro meal planning
 │ ├── lifestyle_agent.py # sleep/walking/caffeine behavioural nudges
 │ └── emergency_agent.py # emergency escalation agent
 │
-├── governance/
+├── 🛡️ governance/
 │ ├── audit_log.py # SHA-256 hash-chain audit log
 │ ├── consent_manager.py # GDPR/HIPAA consent tracking
 │ ├── encryption.py # Fernet encryption utilities
@@ -143,19 +146,19 @@ paai-healthcare/
 │ ├── clinician_override.py # Tier 2 override logging
 │ └── governance_review.py # governance committee policy review
 │
-├── orchestrator/
+├── 🎛️ orchestrator/
 │ ├── orchestrator.py # multi-agent BDI orchestrator
 │ ├── constraint_filter.py # RL action safety constraint layer
 │ ├── conflict_resolver.py # drug–food–lifestyle conflict resolution
 │ └── task_router.py # task → agent dispatch routing
 │
-├── envs/
+├── 🌍 envs/
 │ ├── spaces.py # STATE_DIM=25, N_ACTIONS=5 constants
 │ ├── patient_env.py # Gymnasium PatientEnv implementation
 │ ├── reward_function.py # composite reward function
 │ └── constraint_set.py # Lagrangian safety constraint set
 │
-├── rl/
+├── 🧮 rl/
 │ ├── train.py # PPO + Lagrangian constraint training
 │ ├── callbacks.py # training callbacks and monitoring
 │ ├── lagrangian.py # dual-variable update λ
@@ -163,12 +166,12 @@ paai-healthcare/
 │ ├── checkpoints/ # saved policy weights
 │ └── tensorboard/ # training logs
 │
-├── baselines/
+├── 📊 baselines/
 │ ├── rules_only.py # baseline B1: rule-based thresholds
 │ ├── predictive_only.py # baseline B2: anomaly detection model
 │ └── human_schedule.py # baseline B3: static clinician schedule
 │
-├── evaluation/
+├── 📈 evaluation/
 │ ├── run_evaluation.py # full synthetic evaluation pipeline
 │ ├── metrics.py # ROC-AUC, precision/recall/F1, latency
 │ ├── statistical_tests.py # DeLong, Wilcoxon, Bonferroni tests
@@ -181,7 +184,7 @@ paai-healthcare/
 │ ├── plot_adherence.py
 │ └── plot_learning_curves.py
 │
-├── tests/
+├── 🧪 tests/
 │ ├── test_signal_pipeline.py
 │ ├── test_agents.py
 │ ├── test_constraint_filter.py
@@ -189,19 +192,20 @@ paai-healthcare/
 │ ├── test_reward_function.py
 │ └── test_orchestrator.py
 │
-├── docs/
+├── 📚 docs/
 │ ├── architecture.md
 │ ├── rl_training_guide.md
 │ ├── mimic_setup.md
 │ └── hitl_guide.md
 │
-└── .github/
+└── ⚡ .github/
 ├── workflows/
 │ ├── test.yml
 │ └── lint.yml
 └── ISSUE_TEMPLATE/
 └── bug_report.md
 
+```
 ---
 
 ---
