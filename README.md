@@ -57,7 +57,7 @@ in IoT healthcare (AgHealth+ system).
 
 ```bash
 # 1. Clone & install
-git clone https://github.com/toqeersyed/paai-healthcare
+git clone git clone https://github.com/aliakarma/paai-healthcare
 cd paai-healthcare
 pip install -r requirements.txt
 pip install -e .
