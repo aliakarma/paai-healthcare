@@ -32,7 +32,7 @@ authors:
   - family-names: Nauman
     given-names: Muhammad
     affiliation: "Effat University, Jeddah"
-repository-code: "https://github.com/toqeersyed/paai-healthcare"
+repository-code: "https://github.com/aliakarma/paai-healthcare"
 license: Apache-2.0
 version: "1.0.0"
 date-released: "2025-01-01"

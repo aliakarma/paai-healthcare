@@ -8,6 +8,14 @@ Official implementation of the **PAAI** framework — a four-layer,
 privacy-aware agentic AI architecture for chronic disease management
 in IoT healthcare (AgHealth+ system).
 
+### 📖 Documentation Index
+
+**Core Documentation**:  
+[Architecture](docs/architecture.md) · [RL Training](docs/rl_training_guide.md) · [HiTL Governance](docs/hitl_guide.md) · [MIMIC Setup](docs/mimic_setup.md)
+
+**Publication Quality Documentation**:  
+[Contributing](CONTRIBUTING.md) · [Data Availability](DATA_AVAILABILITY.md) · [Limitations & Future Work](LIMITATIONS.md) · [Author Declarations](DECLARATIONS.md) · [License](LICENSE)
+
 ---
 
 ## Architecture Overview
@@ -57,7 +65,7 @@ in IoT healthcare (AgHealth+ system).
 
 ```bash
 # 1. Clone & install
-git clone git clone https://github.com/aliakarma/paai-healthcare
+git clone https://github.com/aliakarma/paai-healthcare
 cd paai-healthcare
 pip install -r requirements.txt
 pip install -e .
@@ -213,11 +221,11 @@ paai-healthcare/
 - **Synthetic Data**: Fully reproducible via `python data/synthetic/generate_patients.py --seed 42`
 - **MIMIC-IV Integration**: Scripts provided in `data/mimic/`; access requires [PhysioNet credentialing](https://physionet.org/content/mimiciv/)
 - **Trained Models**: Checkpoints saved to `models/` during training; example weights included in release v1.0
-- **Persistent Archive**: This repository is archived at Zenodo: [10.5281/zenodo.XXXXXXX](https://zenodo.org/records/XXXXXXX) (CC BY 4.0)
+- **Persistent Archive**: This repository will be archived at Zenodo upon publication with a persistent DOI
 
-> 🔄 **Exact Reproducibility**: All experiments use `--seed 42`. Results in Table 2 can be regenerated via:
+> 🔄 **Exact Reproducibility**: All experiments use fixed random seed (`--seed 42`). Results in Table 2 can be regenerated via:
 > ```bash
-> python evaluation/run_evaluation.py --mode all --seed 42 --reproduce-table2
+> python evaluation/run_evaluation.py --mode all --seed 42
 > ```
 
 ---
@@ -255,18 +263,56 @@ If you use this code or framework in your research, please cite:
 
 ```bibtex
 @article{syed2026paai,
-  title   = {PAAI — From Sensing to Action: A Privacy-Aware Agentic AI 
-             Architecture for IoT Healthcare},
+  title   = {PAAI: A Privacy-Aware Agentic AI Architecture for 
+             Chronic Disease Management in IoT Healthcare},
   author  = {Syed, Toqeer Ali and Akarma, Ali and Ali, Ahmad and 
              Lee, It Ee and Jan, Salman and Khan, Sohail and Nauman, Muhammad},
-  journal = {},
-  year    = {2026},
-  volume  = {},
-  issue   = {},
-  pages   = {},
-  doi     = {}
+  journal = {Under review},
+  year    = {2026}
 }
 
-## License
+---
 
-Apache 2.0 — see (LICENSE).
+## 📋 Contributions & Authors
+
+This work is a collaborative effort across multiple institutions:
+
+- **Lead Authors**: Toqeer Ali Syed (Islamic University of Madinah), Ali Akarma (Islamic University of Madinah)
+- **Co-Authors**: Ahmad Ali (Islamic University of Madinah), It Ee Lee (Multimedia University), 
+  Salman Jan (Arab Open University), Sohail Khan (Effat University), Muhammad Nauman (Effat University)
+
+### Author Contributions
+
+**Toqeer Ali Syed (T.A.S.)**: Conceptualization, methodology, architecture design, RL framework, evaluation, writing
+
+**Ali Akarma (A.A.)**: BDI agents, knowledge graph integration, orchestrator design, governance module, writing
+
+**Ahmad Ali (A.A.)**: Synthetic data generation, baseline implementations, statistical testing
+
+**It Ee Lee, Salman Jan, Sohail Khan, Muhammad Nauman**: Critical review, validation, governance framework
+
+---
+
+## 🙏 Acknowledgements
+
+We acknowledge the PhysioNet team for access to MIMIC-IV dataset. This research was conducted 
+independently and is not endorsed by or affiliated with any commercial entity.
+
+---
+
+## ⚖️ Ethics Statement
+
+This work adheres to the following ethical principles:
+
+- **Patient Privacy**: All software includes cryptographic protections (AES-256, SHA-256 hash-chaining) 
+  to ensure HIPAA/GDPR compliance
+- **Data Governance**: Human-in-the-loop oversight at three tiers prevents autonomous escalation of risk
+- **Transparency**: All model decisions are logged and auditable via immutable audit log
+- **Bias Mitigation**: Evaluation includes subgroup disparity analysis (see `governance/hitl/governance_review.py`)
+- **Clinical Validation**: MIMIC-IV evaluation bridges synthetic and real-world validation
+
+---
+
+## 📄 License
+
+Apache 2.0 — see [LICENSE](LICENSE).
