@@ -10,8 +10,8 @@ Any tampering is detectable by verify_integrity().
 
 import hashlib
 import json
-import time
 import os
+import time
 from pathlib import Path
 from typing import Optional
 

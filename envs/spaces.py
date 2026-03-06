@@ -1,7 +1,7 @@
 """State and action space definitions for the patient Gym environment."""
 
-import numpy as np
 import gymnasium as gym
+import numpy as np
 
 # 25-dimensional state: 5 z-scored vitals + 5 rolling means + 5 slopes
 # + 3 adherence + 4 context + 3 policy flags

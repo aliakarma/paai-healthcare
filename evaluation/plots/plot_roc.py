@@ -39,9 +39,10 @@ import warnings
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_auc_score, roc_curve, auc as sklearn_auc
+import numpy as np
+from sklearn.metrics import auc as sklearn_auc
+from sklearn.metrics import roc_auc_score, roc_curve
 
 # ── Aesthetics ─────────────────────────────────────────────────────────────────
 _COLORS = {

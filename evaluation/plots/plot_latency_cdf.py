@@ -1,7 +1,8 @@
 """Figure 5 — CDF of alert latency."""
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 from evaluation.metrics import compute_latency_cdf
 
 

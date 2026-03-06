@@ -1,6 +1,10 @@
 """Unit tests for hash-chained audit log."""
 
-import sys, os, tempfile, pytest
+import os
+import sys
+import tempfile
+
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -25,6 +29,7 @@ def test_append_and_verify():
 
 def test_tamper_detection():
     import json
+
     from governance.audit_log import AuditLog
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as tf:

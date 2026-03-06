@@ -9,18 +9,19 @@ These tests exercise the ACTUAL Orchestrator API:
 import os
 import sys
 import tempfile
+
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from governance.audit_log import AuditLog
-from knowledge.policy_registry import PolicyRegistry
-from knowledge.knowledge_graph import KnowledgeGraph
-from knowledge.feature_store import FeatureStore
+from agents.emergency_agent import EmergencyAgent
+from agents.lifestyle_agent import LifestyleAgent
 from agents.medicine_agent import MedicineAgent
 from agents.nutrition_agent import NutritionAgent
-from agents.lifestyle_agent import LifestyleAgent
-from agents.emergency_agent import EmergencyAgent
+from governance.audit_log import AuditLog
+from knowledge.feature_store import FeatureStore
+from knowledge.knowledge_graph import KnowledgeGraph
+from knowledge.policy_registry import PolicyRegistry
 
 # ─── Shared fixtures ──────────────────────────────────────────────────────────
 

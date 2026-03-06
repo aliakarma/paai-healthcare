@@ -13,9 +13,10 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -35,17 +36,17 @@ def run_synthetic(cohort_dir: str, model_path: str, output_dir: str):
     print("SYNTHETIC COHORT EVALUATION")
     print("=" * 60)
 
-    from baselines.rules_only import evaluate as eval_b1
-    from baselines.predictive_only import evaluate as eval_b2
     from baselines.human_schedule import evaluate as eval_b3
-    from rl.evaluate_policy import evaluate_aghealth
-    from evaluation.statistical_tests import delong_test, bonferroni_correct
+    from baselines.predictive_only import evaluate as eval_b2
+    from baselines.rules_only import evaluate as eval_b1
     from evaluation.ablation import run_ablation
-    from evaluation.plots.plot_roc import plot_roc
-    from evaluation.plots.plot_med_quality import plot_med_quality
-    from evaluation.plots.plot_latency_cdf import plot_latency_cdf
     from evaluation.plots.plot_adherence import plot_adherence
+    from evaluation.plots.plot_latency_cdf import plot_latency_cdf
     from evaluation.plots.plot_learning_curves import plot_learning_curves
+    from evaluation.plots.plot_med_quality import plot_med_quality
+    from evaluation.plots.plot_roc import plot_roc
+    from evaluation.statistical_tests import bonferroni_correct, delong_test
+    from rl.evaluate_policy import evaluate_aghealth
 
     print("\nRunning baselines and AgHealth+…")
     results = {

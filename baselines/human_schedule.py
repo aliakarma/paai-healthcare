@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import roc_auc_score, precision_score
+from sklearn.metrics import precision_score, roc_auc_score
 from tqdm import tqdm
 
 # ── Schedule parameters ───────────────────────────────────────────────────────

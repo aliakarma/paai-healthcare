@@ -9,17 +9,18 @@ and routes tasks to specialised agents.
 This is the central reasoning hub of the AgHealth+ system.
 """
 
-import numpy as np
-import yaml
 from typing import Optional
 
-from knowledge.knowledge_graph import KnowledgeGraph
-from knowledge.feature_store import FeatureStore
-from knowledge.policy_registry import PolicyRegistry
-from orchestrator.constraint_filter import ConstraintFilter
-from orchestrator.conflict_resolver import ConflictResolver
-from orchestrator.task_router import TaskRouter
+import numpy as np
+import yaml
+
 from governance.audit_log import AuditLog
+from knowledge.feature_store import FeatureStore
+from knowledge.knowledge_graph import KnowledgeGraph
+from knowledge.policy_registry import PolicyRegistry
+from orchestrator.conflict_resolver import ConflictResolver
+from orchestrator.constraint_filter import ConstraintFilter
+from orchestrator.task_router import TaskRouter
 
 
 class Orchestrator:

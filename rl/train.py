@@ -16,9 +16,10 @@ Monitor training: tensorboard --logdir rl/tensorboard/
 import argparse
 import os
 import sys
-import yaml
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -108,8 +109,10 @@ def main():
     registry = PolicyRegistry()
 
     try:
+        from stable_baselines3.common.callbacks import (CheckpointCallback,
+                                                        EvalCallback)
         from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor
-        from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
+
         from rl.callbacks import TensorboardRewardCallback
     except ImportError as e:
         print(f"Missing dependency: {e}")

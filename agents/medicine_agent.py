@@ -31,15 +31,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from agents.base_agent import (
-    ActionType,
-    AgentAction,
-    AgentResult,
-    BaseAgent,
-    MedicationEntry,
-    PatientState,
-    Urgency,
-)
+from agents.base_agent import (ActionType, AgentAction, AgentResult, BaseAgent,
+                               MedicationEntry, PatientState, Urgency)
 
 logger = logging.getLogger(__name__)
 

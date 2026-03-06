@@ -5,8 +5,9 @@ Rolling feature cache for the RL policy state construction.
 Stores recent vital sign windows and pre-computes trend features.
 """
 
-import numpy as np
 from collections import deque
+
+import numpy as np
 
 
 class FeatureStore:

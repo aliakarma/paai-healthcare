@@ -8,13 +8,14 @@ Tests use the actual agent API:
 import os
 import sys
 import tempfile
+
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from governance.audit_log import AuditLog
-from knowledge.policy_registry import PolicyRegistry
 from knowledge.knowledge_graph import KnowledgeGraph
+from knowledge.policy_registry import PolicyRegistry
 
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -157,8 +158,8 @@ def test_lifestyle_agent_sleep_advance_on_debt(audit_log, registry, kg):
 
 def test_medicine_agent_safety_gate_blocks_new_medication(audit_log, registry, kg):
     """_safety_gate must block any action whose payload contains add_medication."""
+    from agents.base_agent import ActionType, AgentAction, Urgency
     from agents.medicine_agent import MedicineAgent
-    from agents.base_agent import AgentAction, ActionType, Urgency
 
     agent = MedicineAgent(registry, kg, audit_log)
     # Action with add_medication key → must be blocked
@@ -176,8 +177,8 @@ def test_medicine_agent_safety_gate_blocks_new_medication(audit_log, registry, k
 
 def test_medicine_agent_safety_gate_permits_reminder(audit_log, registry, kg):
     """_safety_gate must allow a normal medication reminder."""
+    from agents.base_agent import ActionType, AgentAction, Urgency
     from agents.medicine_agent import MedicineAgent
-    from agents.base_agent import AgentAction, ActionType, Urgency
 
     agent = MedicineAgent(registry, kg, audit_log)
     good_action = AgentAction(
@@ -194,8 +195,8 @@ def test_medicine_agent_safety_gate_permits_reminder(audit_log, registry, kg):
 
 def test_medicine_agent_adherence_reminder(audit_log, registry, kg):
     """Low adherence should trigger a medication_reminder action."""
-    from agents.medicine_agent import MedicineAgent
     from agents.base_agent import MedicationEntry
+    from agents.medicine_agent import MedicineAgent
 
     agent = MedicineAgent(registry, kg, audit_log)
     result = agent.execute(

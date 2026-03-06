@@ -1,7 +1,7 @@
 """Figure 6 — Composite nutritional adherence over 8 weeks."""
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def plot_adherence(results: dict = None, save_path: str = None):

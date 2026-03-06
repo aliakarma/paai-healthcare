@@ -3,7 +3,7 @@ setup.py — installs the paai_healthcare package so all sub-modules
 can be imported without path manipulation.
 """
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="paai_healthcare",

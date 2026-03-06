@@ -1,7 +1,8 @@
 """Unit tests for Algorithm 1 — Signal Preprocessing."""
 
-import sys
 import os
+import sys
+
 import numpy as np
 import pytest
 

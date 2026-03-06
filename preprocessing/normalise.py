@@ -1,8 +1,9 @@
 """Unit normalisation and z-score scaling for physiological channels."""
 
+from pathlib import Path
+
 import numpy as np
 import yaml
-from pathlib import Path
 
 
 class ChannelNormaliser:

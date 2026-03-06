@@ -1,7 +1,7 @@
 """Figure 4 — Medicine recommendation quality (precision/recall/F1)."""
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def plot_med_quality(results: dict = None, save_path: str = None):

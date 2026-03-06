@@ -7,13 +7,14 @@ Require: Raw streams S from IoT, EHR, self-reports
 Ensure:  Feature vector x, anomaly set E
 """
 
-import numpy as np
-import yaml
 from typing import Optional
 
-from preprocessing.denoise import median_filter, bridge_dropouts
-from preprocessing.normalise import ChannelNormaliser
+import numpy as np
+import yaml
+
+from preprocessing.denoise import bridge_dropouts, median_filter
 from preprocessing.feature_extraction import extract_all_features
+from preprocessing.normalise import ChannelNormaliser
 
 CHANNELS = ["sbp", "dbp", "glucose_mgdl", "heart_rate", "spo2"]
 

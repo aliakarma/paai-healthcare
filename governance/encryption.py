@@ -4,8 +4,8 @@ encryption.py
 AES-256 field-level encryption helpers for CIP compliance.
 """
 
-import os
 import base64
+import os
 
 
 def generate_key() -> bytes:

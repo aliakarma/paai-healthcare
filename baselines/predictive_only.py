@@ -26,8 +26,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
+from sklearn.metrics import precision_score, roc_auc_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import roc_auc_score, precision_score
 
 FEATURE_COLS = [
     "sbp",

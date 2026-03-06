@@ -7,7 +7,7 @@ Reports ROC AUC vs ICD-coded escalation ground truth.
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import roc_auc_score, confusion_matrix
+from sklearn.metrics import confusion_matrix, roc_auc_score
 
 
 def evaluate_mimic(vitals_path: str, events_path: str) -> dict:

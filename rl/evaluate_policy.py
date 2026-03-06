@@ -19,16 +19,16 @@ Key corrections vs. previous version
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
-import logging
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import precision_score, roc_auc_score
 from tqdm import tqdm
-from sklearn.metrics import roc_auc_score, precision_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 

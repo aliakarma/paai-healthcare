@@ -20,10 +20,11 @@ import argparse
 import json
 import os
 import sys
-import yaml
-import pandas as pd
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 

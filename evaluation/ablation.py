@@ -34,7 +34,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import roc_auc_score, precision_score
+from sklearn.metrics import precision_score, roc_auc_score
 from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -347,8 +347,8 @@ def run_ablation(cohort_dir: str, model_path: str) -> list[dict]:
     -------
     list[dict] — one row per variant, suitable for pandas.DataFrame
     """
+    from evaluation.statistical_tests import bonferroni_correct, wilcoxon_test
     from knowledge.policy_registry import PolicyRegistry
-    from evaluation.statistical_tests import wilcoxon_test, bonferroni_correct
 
     registry = PolicyRegistry()
 

@@ -1,6 +1,10 @@
 """Unit tests for composite reward (Equation 1)."""
 
-import sys, os, numpy as np, pytest
+import os
+import sys
+
+import numpy as np
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 

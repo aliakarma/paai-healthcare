@@ -5,9 +5,10 @@ Tier 3 HiTL: Weekly governance committee drift metrics.
 Monitors override frequency, false-positive rates, and subgroup disparities.
 """
 
-import numpy as np
-from pathlib import Path
 import json
+from pathlib import Path
+
+import numpy as np
 
 
 class GovernanceReviewer:

@@ -9,16 +9,17 @@ Actions: Discrete(5) — {no_action, med_schedule, dietary_mod, lifestyle_prompt
 Reward : Equation 1 — R_t^clinical + lambda_adh*R_t^adh + lambda_safe*R_t^safety
 """
 
-import numpy as np
-import gymnasium as gym
-from gymnasium import spaces
 from typing import Optional
 
-from envs.reward_function import compute_reward
+import gymnasium as gym
+import numpy as np
+from gymnasium import spaces
+
 from envs.constraint_set import ConstraintSet
-from envs.spaces import ACTION_NAMES, STATE_DIM, N_ACTIONS
-from preprocessing.signal_pipeline import SignalPipeline
+from envs.reward_function import compute_reward
+from envs.spaces import ACTION_NAMES, N_ACTIONS, STATE_DIM
 from knowledge.policy_registry import PolicyRegistry
+from preprocessing.signal_pipeline import SignalPipeline
 
 
 class PatientEnv(gym.Env):

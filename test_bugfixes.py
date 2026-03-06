@@ -11,6 +11,7 @@ Run:
 import types
 import unittest
 from unittest.mock import MagicMock, patch
+
 import numpy as np
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -73,7 +74,9 @@ class TestCheckPlanConflicts(unittest.TestCase):
     def _make_kg(self):
         """Build a minimal KnowledgeGraph backed by a fake graph."""
         # Import the real class but replace its graph
-        import importlib, sys, types
+        import importlib
+        import sys
+        import types
 
         # Stub out yaml and networkx so the import doesn't fail
         yaml_stub = types.ModuleType("yaml")
@@ -204,7 +207,8 @@ class TestLocalReplan(unittest.TestCase):
 
     def _make_agent(self):
         """Construct a NutritionAgent with stub dependencies."""
-        import sys, types
+        import sys
+        import types
 
         # Stub base_agent so we don't need the full BDI stack
         ba = types.ModuleType("agents.base_agent")
@@ -236,12 +240,8 @@ class TestLocalReplan(unittest.TestCase):
         if "agents.nutrition_agent" in sys.modules:
             del sys.modules["agents.nutrition_agent"]
 
-        from agents.nutrition_agent import (
-            NutritionAgent,
-            FoodItem,
-            MealPlan,
-            NutrientTargets,
-        )
+        from agents.nutrition_agent import (FoodItem, MealPlan,
+                                            NutrientTargets, NutritionAgent)
 
         agent = NutritionAgent(
             policy_registry=MagicMock(),
@@ -380,7 +380,8 @@ class TestBeliefIsolation(unittest.TestCase):
     """
 
     def _make_orchestrator(self):
-        import sys, types
+        import sys
+        import types
 
         # Stub networkx so orchestrator.py imports cleanly
         if "networkx" not in sys.modules:
@@ -529,7 +530,8 @@ class TestBaselineMetrics(unittest.TestCase):
         noise so that IsolationForest sees varied features and bootstrap
         resamples of precision have non-zero variance.
         """
-        import os, csv
+        import csv
+        import os
 
         os.makedirs(tmp_dir, exist_ok=True)
 
@@ -587,6 +589,7 @@ class TestBaselineMetrics(unittest.TestCase):
     def test_rules_only_metrics_vary(self):
         """Bootstrap precision values must not all be the same constant."""
         import tempfile
+
         from baselines.rules_only import evaluate
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -606,6 +609,7 @@ class TestBaselineMetrics(unittest.TestCase):
     def test_rules_only_latency_from_data(self):
         """Latency values must come from actual threshold crossings."""
         import tempfile
+
         from baselines.rules_only import evaluate
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -621,7 +625,7 @@ class TestBaselineMetrics(unittest.TestCase):
 
     def test_human_schedule_only_escalates_at_review_time(self):
         """Human schedule must only produce action=4 at hour 9."""
-        from baselines.human_schedule import _score_row, _is_review_time
+        from baselines.human_schedule import _is_review_time, _score_row
 
         rng = np.random.default_rng(42)
 
@@ -638,6 +642,7 @@ class TestBaselineMetrics(unittest.TestCase):
     def test_predictive_only_roc_scores_in_range(self):
         """IsolationForest scores must be in [0, 1]."""
         import tempfile
+
         from baselines.predictive_only import evaluate
 
         with tempfile.TemporaryDirectory() as tmp:
