@@ -267,7 +267,7 @@ If you use this code or framework in your research, please cite:
              Chronic Disease Management in IoT Healthcare},
   author  = {Syed, Toqeer Ali and Akarma, Ali and Ali, Ahmad and 
              Lee, It Ee and Jan, Salman and Khan, Sohail and Nauman, Muhammad},
-  journal = {Under review},
+  journal = {Not Specified Yet},
   year    = {2026}
 }
 
