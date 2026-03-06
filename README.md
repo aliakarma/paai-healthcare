@@ -1,9 +1,8 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/aliakarma/paai-healthcare/main/docs/assets/banner.png" alt="AgHealth+ PAAI" height="45"/>
+<img src="https://raw.githubusercontent.com/aliakarma/paai-healthcare/main/docs/assets/banner.png" alt="AgHealth+ PAAI" width="100%" onerror="this.style.display='none'"/>
 
-# PAAI · Privacy-Aware Agentic AI
-### for IoT Healthcare
+# PAAI · Privacy-Aware Agentic AI for IoT Healthcare
 
 **A four-layer privacy-preserving agentic AI architecture for chronic disease management**
 
