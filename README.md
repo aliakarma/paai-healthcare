@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://python.org)
+[![DOI](https://zenodo.org/badge/1173708567.svg)](https://doi.org/10.5281/zenodo.18891707)
 
 
 Official implementation of the **PAAI** framework — a four-layer,
