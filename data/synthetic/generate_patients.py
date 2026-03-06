@@ -25,8 +25,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-from tqdm import tqdm
-
+try:
+    from tqdm import tqdm
+except ImportError:
+    # fallback if tqdm is not installed
+    def tqdm(x, **kwargs):
+        return x
 # Allow imports from repo root
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from data.synthetic.adherence_model import AdherenceModel
