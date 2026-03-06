@@ -70,7 +70,7 @@
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  Layer 1  ·  Sensing & Data Acquisition                                  │
-│  Wearables (BP / HR / SpO₂ / Glucose)  ·  EHR Records  ·  Patient I/O   │
+│  Wearables (BP / HR / SpO₂ / Glucose)  ·  EHR Records  ·  Patient I/O    │
 └──────────────────────────────┬───────────────────────────────────────────┘
                                │  Algorithm 1  (signal_pipeline)
 ┌──────────────────────────────▼───────────────────────────────────────────┐
@@ -80,18 +80,18 @@
                                │  CMDP state  sₜ
 ┌──────────────────────────────▼───────────────────────────────────────────┐
 │  Layer 3  ·  Agentic AI Core                                             │
-│  Orchestrator (Listing 1) → RL π(a|s) → Constraint Filter               │
+│  Orchestrator (Listing 1) → RL π(a|s) → Constraint Filter                │
 │                           → Conflict Resolver → Task Router              │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────────────┐  │
-│  │  Medicine   │ │  Nutrition  │ │  Lifestyle  │ │   Emergency      │  │
-│  │    Agent    │ │    Agent    │ │    Agent    │ │  Escalation Agt  │  │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └──────────────────┘  │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────────────┐    │
+│  │  Medicine   │ │  Nutrition  │ │  Lifestyle  │ │   Emergency      │    │
+│  │    Agent    │ │    Agent    │ │    Agent    │ │  Escalation Agt  │    │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └──────────────────┘    │
 └──────────────────────────────┬───────────────────────────────────────────┘
                                │  CIP: encrypt + hash-chain
 ┌──────────────────────────────▼───────────────────────────────────────────┐
 │  Layer 4  ·  Governance & Outputs                                        │
-│  Encrypted Data Lake  ·  Immutable Audit Log  ·  3-Tier HiTL            │
-│  Patient App  ·  Clinician Dashboard  ·  Clinician Alert                │
+│  Encrypted Data Lake  ·  Immutable Audit Log  ·  3-Tier HiTL             │
+│  Patient App  ·  Clinician Dashboard  ·  Clinician Alert                 │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -343,6 +343,6 @@ Distributed under the **Apache 2.0 License**. See [`LICENSE`](LICENSE) for full 
 
 <br/>
 
-*AgHealth+ · PAAI — Advancing privacy-preserving AI for patient-centred healthcare*
+*PAAI — Advancing privacy-preserving AI for patient-centred healthcare*
 
 </div>
