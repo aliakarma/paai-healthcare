@@ -84,8 +84,7 @@ paai-healthcare/
 ├── 📜 LICENSE # Apache-2.0 license
 ├── 📖 CITATION.cff # citation metadata for academic use
 ├── 📘 README.md
-├── 🧩 MERGE_GUIDE.md # step-by-step unzip & verify instructions
-├── ✅ verify_merge.py # repository merge verification script
+├── ✅ test_bugfixes.py # bugfix tests
 │
 ├── ⚙️ configs/
 │ ├── patient_sim.yaml # 500 patients, 12-month simulation parameters
@@ -163,8 +162,7 @@ paai-healthcare/
 │ ├── callbacks.py # training callbacks and monitoring
 │ ├── lagrangian.py # dual-variable update λ
 │ ├── evaluate_policy.py # policy evaluation runner
-│ ├── checkpoints/ # saved policy weights
-│ └── tensorboard/ # training logs
+│ └── checkpoints/ # saved policy weights
 │
 ├── 📊 baselines/
 │ ├── rules_only.py # baseline B1: rule-based thresholds
