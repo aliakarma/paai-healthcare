@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 # Shared enumerations
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class ActionType(str, Enum):
     """Canonical action types produced by domain agents.
 
@@ -69,46 +70,49 @@ class ActionType(str, Enum):
     """
 
     # ── Medicine domain — TaskRouter-routed ──────────────────────────────────
-    MEDICATION_REMINDER    = "medication_reminder"
-    MEDICATION_SCHEDULE    = "medication_schedule"    # was "medication_reschedule" (Issue 2)
-    ESCALATE_DRUG_SAFETY   = "escalate_drug_safety"
+    MEDICATION_REMINDER = "medication_reminder"
+    MEDICATION_SCHEDULE = "medication_schedule"  # was "medication_reschedule" (Issue 2)
+    ESCALATE_DRUG_SAFETY = "escalate_drug_safety"
 
     # ── Nutrition domain — TaskRouter-routed ─────────────────────────────────
-    MEAL_PLAN              = "meal_plan"
-    DIETARY_MODIFICATION   = "dietary_modification"   # was "dietary_restriction" (Issue 2)
-    SODIUM_ADVISORY        = "sodium_advisory"        # added (Issue 2)
+    MEAL_PLAN = "meal_plan"
+    DIETARY_MODIFICATION = "dietary_modification"  # was "dietary_restriction" (Issue 2)
+    SODIUM_ADVISORY = "sodium_advisory"  # added (Issue 2)
 
     # ── Lifestyle domain — TaskRouter-routed ─────────────────────────────────
-    LIFESTYLE_PROMPT       = "lifestyle_prompt"       # added (Issue 2)
-    SLEEP_ADJUSTMENT       = "sleep_adjustment"       # was "sleep_advance" (Issue 2)
-    WALK_PROMPT            = "walk_prompt"
+    LIFESTYLE_PROMPT = "lifestyle_prompt"  # added (Issue 2)
+    SLEEP_ADJUSTMENT = "sleep_adjustment"  # was "sleep_advance" (Issue 2)
+    WALK_PROMPT = "walk_prompt"
 
     # ── Emergency domain — TaskRouter-routed ─────────────────────────────────
-    ESCALATE               = "escalate"               # added (Issue 2)
-    ESCALATE_TO_CLINICIAN  = "escalate_to_clinician"  # was "escalate_clinician" (Issue 2)
-    REPEAT_MEASUREMENT     = "repeat_measurement"
+    ESCALATE = "escalate"  # added (Issue 2)
+    ESCALATE_TO_CLINICIAN = (
+        "escalate_to_clinician"  # was "escalate_clinician" (Issue 2)
+    )
+    REPEAT_MEASUREMENT = "repeat_measurement"
 
     # ── Patient-app-only nudges (bypass TaskRouter) ───────────────────────────
-    MEAL_SWAP              = "meal_swap"
-    NAP_RECOMMENDATION     = "nap_recommendation"
-    CAFFEINE_HYGIENE       = "caffeine_hygiene"
-    SELF_CARE_GUIDANCE     = "self_care_guidance"
-    DE_ESCALATE            = "de_escalate"
-    NO_ACTION              = "no_action"
+    MEAL_SWAP = "meal_swap"
+    NAP_RECOMMENDATION = "nap_recommendation"
+    CAFFEINE_HYGIENE = "caffeine_hygiene"
+    SELF_CARE_GUIDANCE = "self_care_guidance"
+    DE_ESCALATE = "de_escalate"
+    NO_ACTION = "no_action"
 
 
 class Urgency(str, Enum):
     """Priority level attached to each agent action."""
 
     IMMEDIATE = "immediate"  # Must route to emergency agent
-    HIGH      = "high"       # Alert within 60 s
-    ROUTINE   = "routine"    # Next scheduled digest
-    GENTLE    = "gentle"     # Soft nudge, no alert
+    HIGH = "high"  # Alert within 60 s
+    ROUTINE = "routine"  # Next scheduled digest
+    GENTLE = "gentle"  # Soft nudge, no alert
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Structured data contracts
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class VitalSigns:
@@ -118,37 +122,37 @@ class VitalSigns:
     ``None`` means the sensor reading is unavailable at this timestep.
     """
 
-    sbp: float | None = None           # Systolic BP (mmHg)
-    dbp: float | None = None           # Diastolic BP (mmHg)
+    sbp: float | None = None  # Systolic BP (mmHg)
+    dbp: float | None = None  # Diastolic BP (mmHg)
     glucose_mgdl: float | None = None  # Blood glucose (mg/dL)
-    heart_rate: float | None = None    # Heart rate (bpm)
-    spo2: float | None = None          # Peripheral O₂ saturation (%)
-    temperature_c: float | None = None # Body temperature (°C)
+    heart_rate: float | None = None  # Heart rate (bpm)
+    spo2: float | None = None  # Peripheral O₂ saturation (%)
+    temperature_c: float | None = None  # Body temperature (°C)
 
 
 @dataclass
 class LabValues:
     """Relevant laboratory results used for drug-safety checks."""
 
-    egfr: float | None = None          # eGFR (mL/min/1.73 m²) — renal function
-    ast: float | None = None           # AST (U/L) — hepatic
-    alt: float | None = None           # ALT (U/L) — hepatic
-    potassium_meq: float | None = None # Serum K⁺ (mEq/L)
-    sodium_meq: float | None = None    # Serum Na⁺ (mEq/L)
-    hba1c: float | None = None         # HbA1c (%)
-    ldl_mgdl: float | None = None      # LDL-C (mg/dL)
+    egfr: float | None = None  # eGFR (mL/min/1.73 m²) — renal function
+    ast: float | None = None  # AST (U/L) — hepatic
+    alt: float | None = None  # ALT (U/L) — hepatic
+    potassium_meq: float | None = None  # Serum K⁺ (mEq/L)
+    sodium_meq: float | None = None  # Serum Na⁺ (mEq/L)
+    hba1c: float | None = None  # HbA1c (%)
+    ldl_mgdl: float | None = None  # LDL-C (mg/dL)
 
 
 @dataclass
 class MedicationEntry:
     """Single medication in the patient's active prescription list."""
 
-    drug: str                          # DrugBank canonical name
-    dose_mg: float                     # Current prescribed dose
-    frequency: str                     # e.g. "once_daily", "twice_daily"
-    timing: str                        # e.g. "morning", "with_meals", "bedtime"
-    route: str = "oral"                # Administration route
-    notes: str = ""                    # Renal/hepatic precaution free text
+    drug: str  # DrugBank canonical name
+    dose_mg: float  # Current prescribed dose
+    frequency: str  # e.g. "once_daily", "twice_daily"
+    timing: str  # e.g. "morning", "with_meals", "bedtime"
+    route: str = "oral"  # Administration route
+    notes: str = ""  # Renal/hepatic precaution free text
 
 
 @dataclass
@@ -185,28 +189,28 @@ class PatientState:
 
     # Physiological signals
     vitals: VitalSigns = field(default_factory=VitalSigns)
-    labs: LabValues    = field(default_factory=LabValues)
+    labs: LabValues = field(default_factory=LabValues)
 
     # Clinical record
     prescriptions: list[MedicationEntry] = field(default_factory=list)
-    conditions:    list[str]             = field(default_factory=list)
-    allergies:     dict[str, bool]       = field(default_factory=dict)
+    conditions: list[str] = field(default_factory=list)
+    allergies: dict[str, bool] = field(default_factory=dict)
 
     # Adherence
-    adherence_med:  float = 0.75
+    adherence_med: float = 0.75
     adherence_diet: float = 0.55
 
     # Lifestyle signals
-    steps_today:         int   = 0
-    sleep_actual_hours:  float = 7.0
-    sleep_target_hours:  float = 7.5
-    chronotype:          str   = "intermediate"
-    hour_of_day:         int   = 12
-    caffeine_intake_mg:  float = 0.0
+    steps_today: int = 0
+    sleep_actual_hours: float = 7.0
+    sleep_target_hours: float = 7.5
+    chronotype: str = "intermediate"
+    hour_of_day: int = 12
+    caffeine_intake_mg: float = 0.0
 
     # Context from feature store / orchestrator
-    trends:       dict[str, float] = field(default_factory=dict)
-    actions_tried: list[dict]      = field(default_factory=list)
+    trends: dict[str, float] = field(default_factory=dict)
+    actions_tried: list[dict] = field(default_factory=list)
 
     # Open extension slot — orchestrator may attach extra context here
     extra: dict[str, Any] = field(default_factory=dict)
@@ -227,11 +231,11 @@ class AgentAction:
     """
 
     action_type: ActionType
-    urgency:     Urgency
-    payload:     dict[str, Any]
-    agent_id:    str
-    patient_id:  str
-    rationale:   str = ""
+    urgency: Urgency
+    payload: dict[str, Any]
+    agent_id: str
+    patient_id: str
+    rationale: str = ""
 
 
 @dataclass
@@ -247,14 +251,15 @@ class AgentResult:
         metadata:  Diagnostic metadata (plan summaries, targets, etc.).
     """
 
-    agent_id:  str
-    actions:   list[AgentAction] = field(default_factory=list)
-    metadata:  dict[str, Any]    = field(default_factory=dict)
+    agent_id: str
+    actions: list[AgentAction] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Dependency protocols (structural typing — avoids circular imports)
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @runtime_checkable
 class PolicyRegistryProtocol(Protocol):
@@ -306,17 +311,20 @@ class KnowledgeGraphProtocol(Protocol):
 class AuditLogProtocol(Protocol):
     """Structural type for hash-chained audit persistence."""
 
-    def append(self,
-               patient_id: str,
-               agent_id: str,
-               action_type: str,
-               action_detail: dict,
-               outcome: dict) -> str: ...
+    def append(
+        self,
+        patient_id: str,
+        agent_id: str,
+        action_type: str,
+        action_detail: dict,
+        outcome: dict,
+    ) -> str: ...
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Abstract base agent
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class BaseAgent(ABC):
     """Abstract BDI agent implementing the three-stage cognitive cycle.
@@ -361,13 +369,13 @@ class BaseAgent(ABC):
     ) -> None:
         self.agent_id = agent_id
         self.registry = policy_registry
-        self.kg       = knowledge_graph
+        self.kg = knowledge_graph
         self.audit_log = audit_log
 
         # ── BDI mental state ─────────────────────────────────────────────────
-        self.beliefs: dict[str, Any]    = {}
-        self.desires: list[str]         = list(self.__class__._DEFAULT_DESIRES)
-        self.intentions: list[dict]     = []
+        self.beliefs: dict[str, Any] = {}
+        self.desires: list[str] = list(self.__class__._DEFAULT_DESIRES)
+        self.intentions: list[dict] = []
 
         self._log = logging.getLogger(f"paai_healthcare.agents.{agent_id}")
 
@@ -536,12 +544,14 @@ class BaseAgent(ABC):
         for action in actions:
             try:
                 self.audit_log.append(
-                    patient_id    = action.patient_id,
-                    agent_id      = self.agent_id,
-                    action_type   = action.action_type.value,
-                    action_detail = action.payload,
-                    outcome       = {"urgency": action.urgency.value,
-                                     "rationale": action.rationale},
+                    patient_id=action.patient_id,
+                    agent_id=self.agent_id,
+                    action_type=action.action_type.value,
+                    action_detail=action.payload,
+                    outcome={
+                        "urgency": action.urgency.value,
+                        "rationale": action.rationale,
+                    },
                 )
             except Exception as exc:  # never let logging crash the agent
                 self._log.error("Audit log write failed: %s", exc)
@@ -567,12 +577,12 @@ class BaseAgent(ABC):
             Fully populated :class:`AgentAction`.
         """
         return AgentAction(
-            action_type = action_type,
-            urgency     = urgency,
-            payload     = payload,
-            agent_id    = self.agent_id,
-            patient_id  = str(self.beliefs.get("patient_id", "unknown")),
-            rationale   = rationale,
+            action_type=action_type,
+            urgency=urgency,
+            payload=payload,
+            agent_id=self.agent_id,
+            patient_id=str(self.beliefs.get("patient_id", "unknown")),
+            rationale=rationale,
         )
 
     def _vitals_dict(self) -> dict[str, float]:
@@ -580,11 +590,11 @@ class BaseAgent(ABC):
         vitals_raw = self.beliefs.get("vitals", {})
         if isinstance(vitals_raw, VitalSigns):
             return {
-                "sbp":          vitals_raw.sbp or 0.0,
-                "dbp":          vitals_raw.dbp or 0.0,
+                "sbp": vitals_raw.sbp or 0.0,
+                "dbp": vitals_raw.dbp or 0.0,
                 "glucose_mgdl": vitals_raw.glucose_mgdl or 0.0,
-                "heart_rate":   vitals_raw.heart_rate or 0.0,
-                "spo2":         vitals_raw.spo2 or 100.0,
+                "heart_rate": vitals_raw.heart_rate or 0.0,
+                "spo2": vitals_raw.spo2 or 100.0,
             }
         return dict(vitals_raw)  # already a dict (legacy path)
 
@@ -594,6 +604,7 @@ class BaseAgent(ABC):
             f"agent_id={self.agent_id!r}, "
             f"desires={self.desires!r})"
         )
+
 
 # Backward-compatibility alias expected by verify_merge.py and tests
 BDIAgent = BaseAgent

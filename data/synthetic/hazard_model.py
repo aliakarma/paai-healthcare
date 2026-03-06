@@ -5,6 +5,7 @@ Rare event generator for the synthetic patient cohort.
 Uses a conditional hazard rate model based on recent vital signs
 and comorbidity load to inject clinically realistic escalation events.
 """
+
 import numpy as np
 
 
@@ -24,8 +25,9 @@ class HazardModel:
         self.rng = rng
         self._active_events: dict[int, dict] = {}  # patient_id -> active event
 
-    def check_event(self, patient_id: int, day: float,
-                    sbp: float, glucose: float) -> str | None:
+    def check_event(
+        self, patient_id: int, day: float, sbp: float, glucose: float
+    ) -> str | None:
         """
         Determine if a rare event occurs or persists at this timestep.
         Returns event label string or None.

@@ -4,6 +4,7 @@ constraint_filter.py
 Projects proposed RL actions onto the feasible set C.
 Implements the Constraint Filter block (Figure 2, paper).
 """
+
 import numpy as np
 
 
@@ -16,8 +17,13 @@ class ConstraintFilter:
     def __init__(self, policy_registry):
         self.registry = policy_registry
 
-    def filter(self, proposed_action: int, vitals: dict,
-               adherence_med: float, active_policies: dict) -> tuple[int, str]:
+    def filter(
+        self,
+        proposed_action: int,
+        vitals: dict,
+        adherence_med: float,
+        active_policies: dict,
+    ) -> tuple[int, str]:
         """
         Given a proposed discrete action (0-4), return the feasible action.
 
@@ -42,8 +48,9 @@ class ConstraintFilter:
         # Rule 3: Caffeine restriction — block dietary mods after cutoff hour
         hour = active_policies.get("hour_of_day", 12)
         if proposed_action == 2:
-            caf_restriction = self.registry.rules.get(
-                "caffeine_restriction", {}).get("hypertension", {})
+            caf_restriction = self.registry.rules.get("caffeine_restriction", {}).get(
+                "hypertension", {}
+            )
             cutoff = caf_restriction.get("after_hour", 14)
             if hour >= cutoff and active_policies.get("hypertension"):
                 pass  # Allow but log warning
@@ -58,8 +65,9 @@ class ConstraintFilter:
         mask = np.ones(5, dtype=bool)
 
         # Cannot escalate unless in watch/escalation zone
-        if not (self.registry.should_escalate(vitals) or
-                self.registry.should_watch(vitals)):
+        if not (
+            self.registry.should_escalate(vitals) or self.registry.should_watch(vitals)
+        ):
             mask[4] = False
 
         # No medication reminder if high adherence

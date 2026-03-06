@@ -8,6 +8,7 @@ State  : 25-dimensional vector (vitals + rolling stats + adherence + context + p
 Actions: Discrete(5) — {no_action, med_schedule, dietary_mod, lifestyle_prompt, escalate}
 Reward : Equation 1 — R_t^clinical + lambda_adh*R_t^adh + lambda_safe*R_t^safety
 """
+
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
@@ -25,9 +26,13 @@ class PatientEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"]}
 
-    def __init__(self, patient_data: dict, config: dict,
-                 policy_registry: PolicyRegistry,
-                 render_mode: Optional[str] = None):
+    def __init__(
+        self,
+        patient_data: dict,
+        config: dict,
+        policy_registry: PolicyRegistry,
+        render_mode: Optional[str] = None,
+    ):
         super().__init__()
         self.patient_data = patient_data
         self.config = config
@@ -36,7 +41,8 @@ class PatientEnv(gym.Env):
         self.render_mode = render_mode
 
         self.observation_space = spaces.Box(
-            low=-10.0, high=10.0, shape=(STATE_DIM,), dtype=np.float32)
+            low=-10.0, high=10.0, shape=(STATE_DIM,), dtype=np.float32
+        )
         self.action_space = spaces.Discrete(N_ACTIONS)
 
         self._vitals_list = patient_data.get("vitals", [])
@@ -61,55 +67,88 @@ class PatientEnv(gym.Env):
         vit = self._vitals_list[idx]
 
         # Raw vitals — crude z-score
-        vitals_z = np.array([
-            (vit.get("sbp", 130) - 130) / 20,
-            (vit.get("dbp", 82)  - 82)  / 12,
-            (vit.get("glucose_mgdl", 110) - 110) / 40,
-            (vit.get("heart_rate", 72) - 72) / 12,
-            (vit.get("spo2", 97.5) - 97.5) / 2,
-        ], dtype=np.float32)
+        vitals_z = np.array(
+            [
+                (vit.get("sbp", 130) - 130) / 20,
+                (vit.get("dbp", 82) - 82) / 12,
+                (vit.get("glucose_mgdl", 110) - 110) / 40,
+                (vit.get("heart_rate", 72) - 72) / 12,
+                (vit.get("spo2", 97.5) - 97.5) / 2,
+            ],
+            dtype=np.float32,
+        )
 
         # Rolling means (5-step window)
         win_start = max(0, idx - 5)
-        window_vits = self._vitals_list[win_start:idx + 1]
-        rolling_mean = np.mean([
-            [w.get("sbp", 130), w.get("dbp", 82),
-             w.get("glucose_mgdl", 110), w.get("heart_rate", 72),
-             w.get("spo2", 97.5)] for w in window_vits], axis=0
+        window_vits = self._vitals_list[win_start : idx + 1]
+        rolling_mean = np.mean(
+            [
+                [
+                    w.get("sbp", 130),
+                    w.get("dbp", 82),
+                    w.get("glucose_mgdl", 110),
+                    w.get("heart_rate", 72),
+                    w.get("spo2", 97.5),
+                ]
+                for w in window_vits
+            ],
+            axis=0,
         ).astype(np.float32) / np.array([130, 82, 110, 72, 97.5])
 
         rolling_slope = vitals_z - (rolling_mean - 1.0)
 
         # Adherence (3)
-        adherence = np.array([
-            vit.get("adherence_med", 0.7),
-            vit.get("adherence_diet", 0.5),
-            vit.get("adherence_lifestyle", 0.6),
-        ], dtype=np.float32)
+        adherence = np.array(
+            [
+                vit.get("adherence_med", 0.7),
+                vit.get("adherence_diet", 0.5),
+                vit.get("adherence_lifestyle", 0.6),
+            ],
+            dtype=np.float32,
+        )
 
         # Context (4)
         t_min = vit.get("t_minutes", idx * 5)
         t_h = (t_min / 60) % 24
-        context = np.array([
-            t_h / 24,
-            (t_h // 24 % 7) / 7,
-            float(abs(t_h % 4 - 2) < 0.5),   # near meal
-            vit.get("adherence_lifestyle", 0.6),
-        ], dtype=np.float32)
+        context = np.array(
+            [
+                t_h / 24,
+                (t_h // 24 % 7) / 7,
+                float(abs(t_h % 4 - 2) < 0.5),  # near meal
+                vit.get("adherence_lifestyle", 0.6),
+            ],
+            dtype=np.float32,
+        )
 
         # Policy flags (3)
         conditions = self.patient_data.get("demographics", {})
-        policies_arr = np.array([
-            float(conditions.get("hypertension", False)),
-            float(self.patient_data.get("policies", {}).get(
-                "caffeine_restriction", False)),
-            float(conditions.get("ckd", False)),
-        ], dtype=np.float32)
+        policies_arr = np.array(
+            [
+                float(conditions.get("hypertension", False)),
+                float(
+                    self.patient_data.get("policies", {}).get(
+                        "caffeine_restriction", False
+                    )
+                ),
+                float(conditions.get("ckd", False)),
+            ],
+            dtype=np.float32,
+        )
 
         return np.clip(
-            np.concatenate([vitals_z, rolling_mean - 1.0,
-                             rolling_slope, adherence, context, policies_arr]),
-            -10.0, 10.0).astype(np.float32)
+            np.concatenate(
+                [
+                    vitals_z,
+                    rolling_mean - 1.0,
+                    rolling_slope,
+                    adherence,
+                    context,
+                    policies_arr,
+                ]
+            ),
+            -10.0,
+            10.0,
+        ).astype(np.float32)
 
     # ------------------------------------------------------------------
     # Action masking (for MaskablePPO)
@@ -136,19 +175,28 @@ class PatientEnv(gym.Env):
             # Constraint violation — redirect to no_action
             action = 0
 
-        vit = (self._vitals_list[self.current_step]
-                if self.current_step < len(self._vitals_list) else {})
+        vit = (
+            self._vitals_list[self.current_step]
+            if self.current_step < len(self._vitals_list)
+            else {}
+        )
 
         reward = compute_reward(
-            state=self._get_obs(), action=action, vital=vit,
-            config=self.config.get("reward", {
-                "lambda_adherence": 0.3, "lambda_safety": 2.0,
-                "clinical_stability_weight": 1.0,
-                "bp_target_systolic": [120, 130],
-                "glucose_tir_target": [70, 180],
-                "constraint_violation_penalty": -10.0,
-                "escalation_event_penalty": -5.0,
-            }),
+            state=self._get_obs(),
+            action=action,
+            vital=vit,
+            config=self.config.get(
+                "reward",
+                {
+                    "lambda_adherence": 0.3,
+                    "lambda_safety": 2.0,
+                    "clinical_stability_weight": 1.0,
+                    "bp_target_systolic": [120, 130],
+                    "glucose_tir_target": [70, 180],
+                    "constraint_violation_penalty": -10.0,
+                    "escalation_event_penalty": -5.0,
+                },
+            ),
             action_mask=mask,
         )
         self.episode_reward += reward
@@ -176,8 +224,10 @@ class PatientEnv(gym.Env):
         if self.render_mode == "human":
             if self.current_step < len(self._vitals_list):
                 vit = self._vitals_list[self.current_step]
-                print(f"Step {self.current_step:5d} | "
-                      f"SBP={vit.get('sbp', 0):5.1f} | "
-                      f"Glu={vit.get('glucose_mgdl', 0):5.1f} | "
-                      f"HR={vit.get('heart_rate', 0):4.1f} | "
-                      f"SpO2={vit.get('spo2', 0):4.1f}%")
+                print(
+                    f"Step {self.current_step:5d} | "
+                    f"SBP={vit.get('sbp', 0):5.1f} | "
+                    f"Glu={vit.get('glucose_mgdl', 0):5.1f} | "
+                    f"HR={vit.get('heart_rate', 0):4.1f} | "
+                    f"SpO2={vit.get('spo2', 0):4.1f}%"
+                )

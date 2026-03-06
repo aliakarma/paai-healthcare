@@ -9,11 +9,14 @@ Used to penalise constraint violations during RL training.
 class LagrangianUpdater:
     """Updates the Lagrangian multiplier lambda to enforce safety constraints."""
 
-    def __init__(self, threshold: float = 0.05,
-                  lr: float = 0.01,
-                  lambda_init: float = 1.0,
-                  lambda_max: float = 10.0):
-        self.threshold = threshold   # Max allowed violation rate
+    def __init__(
+        self,
+        threshold: float = 0.05,
+        lr: float = 0.01,
+        lambda_init: float = 1.0,
+        lambda_max: float = 10.0,
+    ):
+        self.threshold = threshold  # Max allowed violation rate
         self.lr = lr
         self.lambda_val = lambda_init
         self.lambda_max = lambda_max
@@ -28,9 +31,8 @@ class LagrangianUpdater:
         self._violation_rates.append(violation_rate)
         constraint_surplus = violation_rate - self.threshold
         self.lambda_val = max(
-            0.0,
-            min(self.lambda_max,
-                self.lambda_val + self.lr * constraint_surplus))
+            0.0, min(self.lambda_max, self.lambda_val + self.lr * constraint_surplus)
+        )
         return self.lambda_val
 
     @property

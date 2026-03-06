@@ -66,6 +66,7 @@ logger = logging.getLogger(__name__)
 # Food database  (replace with USDA FoodData Central loader in production)
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class FoodItem:
     """Immutable representation of a single food in the database.
@@ -84,40 +85,131 @@ class FoodItem:
         tags:           Semantic tags for filtering (e.g. ``"potassium_rich"``).
     """
 
-    food_id:        str
-    name:           str
-    kcal:           float
-    sodium_mg:      float
-    fiber_g:        float
-    protein_g:      float
-    potassium_mg:   float
+    food_id: str
+    name: str
+    kcal: float
+    sodium_mg: float
+    fiber_g: float
+    protein_g: float
+    potassium_mg: float
     glycemic_index: int
-    meal_slot:      str
-    tags:           tuple[str, ...] = field(default_factory=tuple)
+    meal_slot: str
+    tags: tuple[str, ...] = field(default_factory=tuple)
 
 
 # Built-in food database (10 items — real deployment loads from USDA/custom DB)
 _FOOD_DB: tuple[FoodItem, ...] = (
-    FoodItem("oatmeal",        "Steel-cut oatmeal",    150,   5, 4.0,  5, 150, 55,
-             "breakfast", ("low_gi", "high_fiber")),
-    FoodItem("greek_yogurt",   "Plain Greek yogurt",   130,  60, 0.0, 17, 240, 11,
-             "breakfast", ("high_protein", "probiotic")),
-    FoodItem("grilled_salmon", "Grilled salmon fillet",280,  80, 0.0, 35, 500,  0,
-             "lunch",     ("high_protein", "omega3")),
-    FoodItem("lentil_soup",    "Red lentil soup",      180, 250, 8.0, 12, 370, 29,
-             "lunch",     ("high_fiber", "plant_protein", "low_gi")),
-    FoodItem("spinach_salad",  "Spinach side salad",    50,  60, 3.0,  3, 400, 15,
-             "lunch",     ("low_gi", "low_calorie", "potassium_rich")),
-    FoodItem("chicken_breast", "Grilled chicken breast",250, 75, 0.0, 40, 300,  0,
-             "dinner",    ("high_protein", "low_fat")),
-    FoodItem("brown_rice",     "Cooked brown rice",    220,   5, 3.5,  5,  84, 68,
-             "dinner",    ("whole_grain",)),
-    FoodItem("sweet_potato",   "Baked sweet potato",   120,  40, 4.0,  2, 450, 63,
-             "dinner",    ("vitamin_a", "potassium_rich")),
-    FoodItem("apple",          "Medium apple",          80,   2, 4.0,  0, 200, 36,
-             "snack",     ("low_gi", "portable")),
-    FoodItem("almonds",        "Dry-roasted almonds",  160,   0, 3.0,  6, 200,  0,
-             "snack",     ("healthy_fat", "low_gi")),
+    FoodItem(
+        "oatmeal",
+        "Steel-cut oatmeal",
+        150,
+        5,
+        4.0,
+        5,
+        150,
+        55,
+        "breakfast",
+        ("low_gi", "high_fiber"),
+    ),
+    FoodItem(
+        "greek_yogurt",
+        "Plain Greek yogurt",
+        130,
+        60,
+        0.0,
+        17,
+        240,
+        11,
+        "breakfast",
+        ("high_protein", "probiotic"),
+    ),
+    FoodItem(
+        "grilled_salmon",
+        "Grilled salmon fillet",
+        280,
+        80,
+        0.0,
+        35,
+        500,
+        0,
+        "lunch",
+        ("high_protein", "omega3"),
+    ),
+    FoodItem(
+        "lentil_soup",
+        "Red lentil soup",
+        180,
+        250,
+        8.0,
+        12,
+        370,
+        29,
+        "lunch",
+        ("high_fiber", "plant_protein", "low_gi"),
+    ),
+    FoodItem(
+        "spinach_salad",
+        "Spinach side salad",
+        50,
+        60,
+        3.0,
+        3,
+        400,
+        15,
+        "lunch",
+        ("low_gi", "low_calorie", "potassium_rich"),
+    ),
+    FoodItem(
+        "chicken_breast",
+        "Grilled chicken breast",
+        250,
+        75,
+        0.0,
+        40,
+        300,
+        0,
+        "dinner",
+        ("high_protein", "low_fat"),
+    ),
+    FoodItem(
+        "brown_rice",
+        "Cooked brown rice",
+        220,
+        5,
+        3.5,
+        5,
+        84,
+        68,
+        "dinner",
+        ("whole_grain",),
+    ),
+    FoodItem(
+        "sweet_potato",
+        "Baked sweet potato",
+        120,
+        40,
+        4.0,
+        2,
+        450,
+        63,
+        "dinner",
+        ("vitamin_a", "potassium_rich"),
+    ),
+    FoodItem(
+        "apple", "Medium apple", 80, 2, 4.0, 0, 200, 36, "snack", ("low_gi", "portable")
+    ),
+    FoodItem(
+        "almonds",
+        "Dry-roasted almonds",
+        160,
+        0,
+        3.0,
+        6,
+        200,
+        0,
+        "snack",
+        ("healthy_fat", "low_gi"),
+    ),
 )
 
 
@@ -125,10 +217,10 @@ _FOOD_DB: tuple[FoodItem, ...] = (
 class NutrientTargets:
     """Per-patient daily macro/micronutrient targets."""
 
-    kcal:         float = 2000.0
-    sodium_mg:    float = 2300.0
-    fiber_g:      float = 25.0
-    protein_g:    float = 56.0
+    kcal: float = 2000.0
+    sodium_mg: float = 2300.0
+    fiber_g: float = 25.0
+    protein_g: float = 56.0
     potassium_mg: float = 3500.0
 
 
@@ -136,20 +228,21 @@ class NutrientTargets:
 class MealPlan:
     """A complete daily meal plan produced by the Nutrition Agent."""
 
-    breakfast:       FoodItem | None = None
-    lunch:           FoodItem | None = None
-    dinner:          FoodItem | None = None
-    snack:           FoodItem | None = None
-    total_kcal:      float           = 0.0
-    total_sodium_mg: float           = 0.0
-    total_fiber_g:   float           = 0.0
-    targets:         NutrientTargets = field(default_factory=NutrientTargets)
-    notes:           list[str]       = field(default_factory=list)
+    breakfast: FoodItem | None = None
+    lunch: FoodItem | None = None
+    dinner: FoodItem | None = None
+    snack: FoodItem | None = None
+    total_kcal: float = 0.0
+    total_sodium_mg: float = 0.0
+    total_fiber_g: float = 0.0
+    targets: NutrientTargets = field(default_factory=NutrientTargets)
+    notes: list[str] = field(default_factory=list)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # NutritionAgent
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class NutritionAgent(BaseAgent):
     """BDI Food & Nutrition Agent — daily meal planning with clinical constraints.
@@ -199,10 +292,10 @@ class NutritionAgent(BaseAgent):
         food_db: tuple[FoodItem, ...] | None = None,
     ) -> None:
         super().__init__(
-            agent_id        = "nutrition_agent",
-            policy_registry = policy_registry,
-            knowledge_graph = knowledge_graph,
-            audit_log       = audit_log,
+            agent_id="nutrition_agent",
+            policy_registry=policy_registry,
+            knowledge_graph=knowledge_graph,
+            audit_log=audit_log,
         )
         self._food_db: tuple[FoodItem, ...] = food_db or _FOOD_DB
 
@@ -212,8 +305,8 @@ class NutritionAgent(BaseAgent):
         """Ingest patient state and populate nutrition-domain beliefs."""
         vitals_dict = {
             "glucose_mgdl": (state.vitals.glucose_mgdl or 100.0),
-            "sbp":          (state.vitals.sbp or 120.0),
-            "dbp":          (state.vitals.dbp or 80.0),
+            "sbp": (state.vitals.sbp or 120.0),
+            "dbp": (state.vitals.dbp or 80.0),
         }
 
         # Derive drug-food exclusions from KG
@@ -225,17 +318,19 @@ class NutritionAgent(BaseAgent):
                     if food:
                         excluded_foods.add(food)
 
-        self.beliefs.update({
-            "patient_id":    state.patient_id,
-            "vitals":        vitals_dict,
-            "conditions":    state.conditions,
-            "allergies":     state.allergies,
-            "prescriptions": state.prescriptions,
-            "bmi":           state.extra.get("bmi", 27.0),
-            "weight_kg":     state.extra.get("weight_kg"),
-            "adherence_diet": state.adherence_diet,
-            "excluded_foods": excluded_foods,
-        })
+        self.beliefs.update(
+            {
+                "patient_id": state.patient_id,
+                "vitals": vitals_dict,
+                "conditions": state.conditions,
+                "allergies": state.allergies,
+                "prescriptions": state.prescriptions,
+                "bmi": state.extra.get("bmi", 27.0),
+                "weight_kg": state.extra.get("weight_kg"),
+                "adherence_diet": state.adherence_diet,
+                "excluded_foods": excluded_foods,
+            }
+        )
         self._log.debug(
             "Perceived: patient=%s glucose=%.1f conditions=%s",
             state.patient_id,
@@ -254,14 +349,16 @@ class NutritionAgent(BaseAgent):
         ]
         adherence = self.beliefs.get("adherence_diet", 0.55)
         if adherence < 0.35:
-            intentions.append({
-                "type":    "dietary_adherence_alert",
-                "urgency": Urgency.HIGH.value,
-                "message": (
-                    f"Dietary adherence critically low ({adherence:.0%}). "
-                    "Consider a patient education session."
-                ),
-            })
+            intentions.append(
+                {
+                    "type": "dietary_adherence_alert",
+                    "urgency": Urgency.HIGH.value,
+                    "message": (
+                        f"Dietary adherence critically low ({adherence:.0%}). "
+                        "Consider a patient education session."
+                    ),
+                }
+            )
         return intentions
 
     def act(self, intentions: list[dict]) -> AgentResult:
@@ -274,10 +371,10 @@ class NutritionAgent(BaseAgent):
             if intent_type == ActionType.MEAL_PLAN.value:
                 plan = self._build_plan()
                 action = self._make_action(
-                    action_type = ActionType.MEAL_PLAN,
-                    urgency     = Urgency.ROUTINE,
-                    payload     = self._serialise_plan(plan),
-                    rationale   = (
+                    action_type=ActionType.MEAL_PLAN,
+                    urgency=Urgency.ROUTINE,
+                    payload=self._serialise_plan(plan),
+                    rationale=(
                         f"Daily meal plan built — "
                         f"estimated {plan.total_kcal:.0f} kcal, "
                         f"{plan.total_sodium_mg:.0f} mg sodium."
@@ -288,20 +385,20 @@ class NutritionAgent(BaseAgent):
 
             elif intent_type == "dietary_adherence_alert":
                 action = self._make_action(
-                    action_type = ActionType.DIETARY_MODIFICATION,
-                    urgency     = Urgency.HIGH,
-                    payload     = {"message": intent.get("message", "")},
-                    rationale   = "Low dietary adherence flag for clinician review.",
+                    action_type=ActionType.DIETARY_MODIFICATION,
+                    urgency=Urgency.HIGH,
+                    payload={"message": intent.get("message", "")},
+                    rationale="Low dietary adherence flag for clinician review.",
                 )
                 actions.append(action)
 
         self._persist_actions(actions)
         return AgentResult(
-            agent_id = self.agent_id,
-            actions  = actions,
-            metadata = {
+            agent_id=self.agent_id,
+            actions=actions,
+            metadata={
                 "adherence_diet": self.beliefs.get("adherence_diet"),
-                "conditions":     self.beliefs.get("conditions"),
+                "conditions": self.beliefs.get("conditions"),
             },
         )
 
@@ -315,10 +412,10 @@ class NutritionAgent(BaseAgent):
         self.update_beliefs(task)
         result = self.act(self.deliberate())
         return {
-            "agent":   self.agent_id,
+            "agent": self.agent_id,
             "actions": [
-                a.payload | {"action_type": a.action_type.value,
-                              "urgency":     a.urgency.value}
+                a.payload
+                | {"action_type": a.action_type.value, "urgency": a.urgency.value}
                 for a in result.actions
             ],
             "metadata": result.metadata,
@@ -328,9 +425,9 @@ class NutritionAgent(BaseAgent):
 
     def _build_plan(self) -> MealPlan:
         """Execute the full meal-plan selection pipeline (Listing 3)."""
-        targets       = self._compute_targets()
+        targets = self._compute_targets()
         excluded_tags = self._build_excluded_tags()
-        glucose       = self.beliefs.get("vitals", {}).get("glucose_mgdl", 100.0)
+        glucose = self.beliefs.get("vitals", {}).get("glucose_mgdl", 100.0)
 
         plan = MealPlan(targets=targets)
         running_sodium = 0.0
@@ -338,22 +435,22 @@ class NutritionAgent(BaseAgent):
         for slot in self._MEAL_SLOTS:
             candidates = self._candidate_meals(slot, excluded_tags)
             if not candidates:
-                self._log.warning(
-                    "No candidates for slot '%s' — skipping.", slot)
+                self._log.warning("No candidates for slot '%s' — skipping.", slot)
                 continue
 
             remaining_sodium = targets.sodium_mg - running_sodium
-            ranked  = self._rank_by_fit(candidates, glucose, remaining_sodium)
-            chosen  = ranked[0]
+            ranked = self._rank_by_fit(candidates, glucose, remaining_sodium)
+            chosen = ranked[0]
             setattr(plan, slot, chosen)
             running_sodium += chosen.sodium_mg
 
         # Aggregate totals
-        selected = [getattr(plan, s) for s in self._MEAL_SLOTS
-                    if getattr(plan, s) is not None]
-        plan.total_kcal      = sum(f.kcal      for f in selected)
-        plan.total_sodium_mg = sum(f.sodium_mg  for f in selected)
-        plan.total_fiber_g   = sum(f.fiber_g    for f in selected)
+        selected = [
+            getattr(plan, s) for s in self._MEAL_SLOTS if getattr(plan, s) is not None
+        ]
+        plan.total_kcal = sum(f.kcal for f in selected)
+        plan.total_sodium_mg = sum(f.sodium_mg for f in selected)
+        plan.total_fiber_g = sum(f.fiber_g for f in selected)
 
         # Local replan if caloric deviation is large
         deviation = plan.total_kcal - targets.kcal
@@ -365,39 +462,39 @@ class NutritionAgent(BaseAgent):
     def _compute_targets(self) -> NutrientTargets:
         """Derive per-patient daily targets from beliefs."""
         conditions = self.beliefs.get("conditions", [])
-        bmi        = float(self.beliefs.get("bmi", 27.0))
-        weight_kg  = self.beliefs.get("weight_kg") or (bmi * (1.70 ** 2))
+        bmi = float(self.beliefs.get("bmi", 27.0))
+        weight_kg = self.beliefs.get("weight_kg") or (bmi * (1.70**2))
 
         condition_key = (
-            "heart_failure" if "heart_failure"  in conditions else
-            "hypertension"  if "hypertension"   in conditions else
-            "healthy"
+            "heart_failure"
+            if "heart_failure" in conditions
+            else "hypertension" if "hypertension" in conditions else "healthy"
         )
         sodium_cap_g = self.registry.get_sodium_cap(condition_key)
 
         kcal = 2000.0
-        if "obesity"      in conditions:
+        if "obesity" in conditions:
             kcal -= 200.0
-        if "underweight"  in conditions:
+        if "underweight" in conditions:
             kcal += 200.0
 
         potassium_mg = 2000.0 if "ckd" in conditions else 3500.0
 
         return NutrientTargets(
-            kcal         = kcal,
-            sodium_mg    = sodium_cap_g * 1000.0,
-            fiber_g      = 25.0,
-            protein_g    = float(weight_kg) * 0.8,
-            potassium_mg = potassium_mg,
+            kcal=kcal,
+            sodium_mg=sodium_cap_g * 1000.0,
+            fiber_g=25.0,
+            protein_g=float(weight_kg) * 0.8,
+            potassium_mg=potassium_mg,
         )
 
     def _build_excluded_tags(self) -> set[str]:
         """Collect food tags that must be excluded for this patient."""
         conditions = self.beliefs.get("conditions", [])
-        allergies  = self.beliefs.get("allergies",  {})
-        excluded   = set(self.beliefs.get("excluded_foods", set()))
+        allergies = self.beliefs.get("allergies", {})
+        excluded = set(self.beliefs.get("excluded_foods", set()))
 
-        if "ckd"       in conditions:
+        if "ckd" in conditions:
             excluded.add("potassium_rich")
         if "dysphagia" in conditions:
             excluded.add("hard_texture")
@@ -408,14 +505,11 @@ class NutritionAgent(BaseAgent):
 
         return excluded
 
-    def _candidate_meals(
-        self, slot: str, excluded_tags: set[str]
-    ) -> list[FoodItem]:
+    def _candidate_meals(self, slot: str, excluded_tags: set[str]) -> list[FoodItem]:
         """Filter the food DB to valid candidates for a meal slot."""
         slot_matches = [f for f in self._food_db if f.meal_slot == slot]
-        safe_items   = [
-            f for f in slot_matches
-            if not any(t in f.tags for t in excluded_tags)
+        safe_items = [
+            f for f in slot_matches if not any(t in f.tags for t in excluded_tags)
         ]
         # Fail-safe: return all slot-matching items if every candidate excluded
         return safe_items if safe_items else slot_matches
@@ -427,13 +521,14 @@ class NutritionAgent(BaseAgent):
         remaining_sodium_mg: float,
     ) -> list[FoodItem]:
         """Score and sort candidates by clinical fit (higher = better)."""
+
         def _score(food: FoodItem) -> float:
             s = 0.0
             if glucose > 140:
                 s -= food.glycemic_index / 100.0
             if remaining_sodium_mg < 600:
                 s -= food.sodium_mg / 500.0
-            s += food.fiber_g   * 0.10
+            s += food.fiber_g * 0.10
             s += food.protein_g * 0.05
             return s
 
@@ -466,19 +561,18 @@ class NutritionAgent(BaseAgent):
         glucose        : current blood glucose (mg/dL)
         deviation_kcal : positive = over target; negative = under target
         """
-        excluded_tags    = self._build_excluded_tags()
+        excluded_tags = self._build_excluded_tags()
         snack_candidates = self._candidate_meals("snack", excluded_tags)
 
         if deviation_kcal > 0:
             alternatives = sorted(snack_candidates, key=lambda f: f.kcal)
         else:
-            alternatives = sorted(snack_candidates, key=lambda f: f.kcal,
-                                   reverse=True)
+            alternatives = sorted(snack_candidates, key=lambda f: f.kcal, reverse=True)
 
         # Capture current snack metrics BEFORE any reassignment
-        current_snack_kcal  = plan.snack.kcal      if plan.snack else 0.0
-        old_sodium_mg       = plan.snack.sodium_mg  if plan.snack else 0.0
-        old_fiber_g         = plan.snack.fiber_g    if plan.snack else 0.0   # FIX
+        current_snack_kcal = plan.snack.kcal if plan.snack else 0.0
+        old_sodium_mg = plan.snack.sodium_mg if plan.snack else 0.0
+        old_fiber_g = plan.snack.fiber_g if plan.snack else 0.0  # FIX
 
         for candidate in alternatives:
             if candidate.food_id == (plan.snack.food_id if plan.snack else None):
@@ -489,15 +583,19 @@ class NutritionAgent(BaseAgent):
                 # Reassign snack — all references to plan.snack below this
                 # line now point to the new candidate, so we use the saved
                 # old_* variables for the subtract step.
-                plan.snack           = candidate
+                plan.snack = candidate
 
-                plan.total_kcal      = new_total_kcal
-                plan.total_sodium_mg = (plan.total_sodium_mg
-                                        - old_sodium_mg                 # FIX: saved value
-                                        + candidate.sodium_mg)
-                plan.total_fiber_g   = (plan.total_fiber_g
-                                        - old_fiber_g                   # FIX: saved value
-                                        + candidate.fiber_g)
+                plan.total_kcal = new_total_kcal
+                plan.total_sodium_mg = (
+                    plan.total_sodium_mg
+                    - old_sodium_mg  # FIX: saved value
+                    + candidate.sodium_mg
+                )
+                plan.total_fiber_g = (
+                    plan.total_fiber_g
+                    - old_fiber_g  # FIX: saved value
+                    + candidate.fiber_g
+                )
 
                 plan.notes.append(
                     f"Snack swapped to {candidate.name} to correct "
@@ -514,34 +612,35 @@ class NutritionAgent(BaseAgent):
 
     def _serialise_plan(self, plan: MealPlan) -> dict[str, Any]:
         """Convert a :class:`MealPlan` to a JSON-serialisable dict."""
+
         def _food_to_dict(f: FoodItem | None) -> dict | None:
             if f is None:
                 return None
             return {
-                "food_id":        f.food_id,
-                "name":           f.name,
-                "kcal":           f.kcal,
-                "sodium_mg":      f.sodium_mg,
-                "fiber_g":        f.fiber_g,
-                "protein_g":      f.protein_g,
-                "potassium_mg":   f.potassium_mg,
+                "food_id": f.food_id,
+                "name": f.name,
+                "kcal": f.kcal,
+                "sodium_mg": f.sodium_mg,
+                "fiber_g": f.fiber_g,
+                "protein_g": f.protein_g,
+                "potassium_mg": f.potassium_mg,
                 "glycemic_index": f.glycemic_index,
-                "tags":           list(f.tags),
+                "tags": list(f.tags),
             }
 
         return {
-            "breakfast":       _food_to_dict(plan.breakfast),
-            "lunch":           _food_to_dict(plan.lunch),
-            "dinner":          _food_to_dict(plan.dinner),
-            "snack":           _food_to_dict(plan.snack),
-            "total_kcal":      round(plan.total_kcal,      1),
+            "breakfast": _food_to_dict(plan.breakfast),
+            "lunch": _food_to_dict(plan.lunch),
+            "dinner": _food_to_dict(plan.dinner),
+            "snack": _food_to_dict(plan.snack),
+            "total_kcal": round(plan.total_kcal, 1),
             "total_sodium_mg": round(plan.total_sodium_mg, 1),
-            "total_fiber_g":   round(plan.total_fiber_g,   1),
+            "total_fiber_g": round(plan.total_fiber_g, 1),
             "targets": {
-                "kcal":         plan.targets.kcal,
-                "sodium_mg":    plan.targets.sodium_mg,
-                "fiber_g":      plan.targets.fiber_g,
-                "protein_g":    round(plan.targets.protein_g, 1),
+                "kcal": plan.targets.kcal,
+                "sodium_mg": plan.targets.sodium_mg,
+                "fiber_g": plan.targets.fiber_g,
+                "protein_g": round(plan.targets.protein_g, 1),
                 "potassium_mg": plan.targets.potassium_mg,
             },
             "notes": plan.notes,

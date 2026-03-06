@@ -8,6 +8,7 @@ and routes tasks to specialised agents.
 
 This is the central reasoning hub of the AgHealth+ system.
 """
+
 import numpy as np
 import yaml
 from typing import Optional
@@ -38,13 +39,16 @@ class Orchestrator:
         4: "escalate",
     }
 
-    def __init__(self, feature_store: FeatureStore,
-                 knowledge_graph: KnowledgeGraph,
-                 policy_registry: PolicyRegistry,
-                 agents: dict,
-                 audit_log: AuditLog,
-                 rl_policy=None,
-                 config_path: str = "configs/rl_training.yaml"):
+    def __init__(
+        self,
+        feature_store: FeatureStore,
+        knowledge_graph: KnowledgeGraph,
+        policy_registry: PolicyRegistry,
+        agents: dict,
+        audit_log: AuditLog,
+        rl_policy=None,
+        config_path: str = "configs/rl_training.yaml",
+    ):
         self.F = feature_store
         self.K = knowledge_graph
         self.P = policy_registry
@@ -67,14 +71,13 @@ class Orchestrator:
     # ------------------------------------------------------------------
     def pull_latest(self, patient_id: int, raw_vitals: dict) -> np.ndarray:
         self.F.push(patient_id, raw_vitals)
-        sbp  = self.F.get_rolling_mean(patient_id, "sbp", 12)
-        glc  = self.F.get_rolling_mean(patient_id, "glucose_mgdl", 12)
-        hr   = self.F.get_rolling_mean(patient_id, "heart_rate", 3)
+        sbp = self.F.get_rolling_mean(patient_id, "sbp", 12)
+        glc = self.F.get_rolling_mean(patient_id, "glucose_mgdl", 12)
+        hr = self.F.get_rolling_mean(patient_id, "heart_rate", 3)
         spo2 = self.F.get_rolling_mean(patient_id, "spo2", 3)
         sbp_trend = self.F.get_trend(patient_id, "sbp", 6)
         glc_trend = self.F.get_trend(patient_id, "glucose_mgdl", 12)
-        return np.array([sbp, glc, hr, spo2, sbp_trend, glc_trend],
-                         dtype=np.float32)
+        return np.array([sbp, glc, hr, spo2, sbp_trend, glc_trend], dtype=np.float32)
 
     # ------------------------------------------------------------------
     # Step 2: Retrieve context from KG + policy (line 2)
@@ -84,19 +87,19 @@ class Orchestrator:
         meds = [m["drug"] for m in patient.get("prescriptions", [])]
         context = {
             "sodium_cap": self.P.get_sodium_cap(
-                "hypertension" if "hypertension" in conditions else "healthy"),
-            "interactions": [
-                self.K.get_drug_interactions(m) for m in meds],
+                "hypertension" if "hypertension" in conditions else "healthy"
+            ),
+            "interactions": [self.K.get_drug_interactions(m) for m in meds],
             "contraindications": [
-                self.K.get_condition_contraindications(c) for c in conditions],
+                self.K.get_condition_contraindications(c) for c in conditions
+            ],
         }
         return context
 
     # ------------------------------------------------------------------
     # Step 3: Detect events (line 3)
     # ------------------------------------------------------------------
-    def detect_events(self, x: np.ndarray, vitals: dict,
-                       adherence: dict) -> list[dict]:
+    def detect_events(self, x: np.ndarray, vitals: dict, adherence: dict) -> list[dict]:
         events = []
         sbp = vitals.get("sbp", 120)
         glc = vitals.get("glucose_mgdl", 100)
@@ -107,11 +110,9 @@ class Orchestrator:
         if self.P.should_watch(vitals):
             events.append({"type": "watch_zone", "vitals": vitals})
         if adh_med < 0.5:
-            events.append({"type": "adherence_lapse",
-                            "adherence_score": adh_med})
+            events.append({"type": "adherence_lapse", "adherence_score": adh_med})
         if sbp > 150 and x[4] > 0.5:  # rising BP trend
-            events.append({"type": "bp_rising_trend", "sbp": sbp,
-                            "trend": float(x[4])})
+            events.append({"type": "bp_rising_trend", "sbp": sbp, "trend": float(x[4])})
         if glc < 80:
             events.append({"type": "hypoglycemia_risk", "glucose": glc})
         return events
@@ -146,25 +147,50 @@ class Orchestrator:
             if goal == "emergency_escalation":
                 tasks.append({"type": "escalate", "priority": "immediate"})
             elif goal == "normalise_blood_pressure":
-                tasks.append({"type": "dietary_modification",
-                               "guidance": "low_sodium_meal", "priority": "high"})
-                tasks.append({"type": "lifestyle_prompt",
-                               "guidance": "reduce_activity_rest", "priority": "high"})
+                tasks.append(
+                    {
+                        "type": "dietary_modification",
+                        "guidance": "low_sodium_meal",
+                        "priority": "high",
+                    }
+                )
+                tasks.append(
+                    {
+                        "type": "lifestyle_prompt",
+                        "guidance": "reduce_activity_rest",
+                        "priority": "high",
+                    }
+                )
             elif goal == "improve_medication_adherence":
                 tasks.append({"type": "medication_reminder", "priority": "routine"})
             elif goal == "raise_blood_glucose_safely":
-                tasks.append({"type": "dietary_modification",
-                               "guidance": "fast_carb_15g", "priority": "urgent"})
+                tasks.append(
+                    {
+                        "type": "dietary_modification",
+                        "guidance": "fast_carb_15g",
+                        "priority": "urgent",
+                    }
+                )
             elif goal == "maintain_physiological_stability":
-                tasks.append({"type": "lifestyle_prompt",
-                               "guidance": "daily_walk_reminder", "priority": "low"})
+                tasks.append(
+                    {
+                        "type": "lifestyle_prompt",
+                        "guidance": "daily_walk_reminder",
+                        "priority": "low",
+                    }
+                )
         return tasks
 
     # ------------------------------------------------------------------
     # Main orchestration loop (Listing 1 complete)
     # ------------------------------------------------------------------
-    def step(self, patient_id: int, raw_vitals: dict, patient_state: dict,
-              observation: Optional[np.ndarray] = None) -> dict:
+    def step(
+        self,
+        patient_id: int,
+        raw_vitals: dict,
+        patient_state: dict,
+        observation: Optional[np.ndarray] = None,
+    ) -> dict:
         """
         One full orchestration cycle:
         Pull → Context → Events → Goals → Tasks → Filter → Resolve → Route → Persist
@@ -187,7 +213,7 @@ class Orchestrator:
         # --- Line 3: Detect events ---
         adherence = {
             "medication": raw_vitals.get("adherence_med", 0.7),
-            "dietary":    raw_vitals.get("adherence_diet", 0.5),
+            "dietary": raw_vitals.get("adherence_diet", 0.5),
         }
         events = self.detect_events(x, raw_vitals, adherence)
 
@@ -200,36 +226,50 @@ class Orchestrator:
         # --- RL policy action (Algorithm 2, line 2) ---
         if self.rl_policy is not None and observation is not None:
             rl_action, _ = self.rl_policy.predict(observation, deterministic=True)
-            rl_task = {"type": self.ACTION_NAMES.get(int(rl_action), "no_action"),
-                        "source": "rl_policy"}
+            rl_task = {
+                "type": self.ACTION_NAMES.get(int(rl_action), "no_action"),
+                "source": "rl_policy",
+            }
             if rl_task["type"] != "no_action":
                 tasks.append(rl_task)
 
         # --- Constraint Filter (Algorithm 2, line 3) ---
         filtered_tasks = []
         for task in tasks:
-            action_int = list(self.ACTION_NAMES.values()).index(
-                task.get("type", "no_action")) if task.get(
-                "type") in self.ACTION_NAMES.values() else 0
+            action_int = (
+                list(self.ACTION_NAMES.values()).index(task.get("type", "no_action"))
+                if task.get("type") in self.ACTION_NAMES.values()
+                else 0
+            )
             filtered_action, reason = self.constraint_filter.filter(
-                action_int, raw_vitals,
+                action_int,
+                raw_vitals,
                 adherence["medication"],
-                {"hypertension": "hypertension" in patient_state.get("conditions", []),
-                 "hour_of_day": (raw_vitals.get("t_minutes", 720) // 60) % 24})
+                {
+                    "hypertension": "hypertension"
+                    in patient_state.get("conditions", []),
+                    "hour_of_day": (raw_vitals.get("t_minutes", 720) // 60) % 24,
+                },
+            )
             if reason != "ok":
                 task["constraint_applied"] = reason
                 task["type"] = self.ACTION_NAMES.get(filtered_action, "no_action")
             filtered_tasks.append(task)
 
         # --- Conflict Resolver (Algorithm 2, line 4) ---
-        resolved_tasks = self.conflict_resolver.resolve(
-            filtered_tasks, raw_vitals)
+        resolved_tasks = self.conflict_resolver.resolve(filtered_tasks, raw_vitals)
 
         # --- Route tasks to agents (Algorithm 2, lines 5-8) ---
         results = []
         for task in resolved_tasks:
-            task.update({"patient_id": patient_id, **patient_state,
-                          "vitals": raw_vitals, **adherence})
+            task.update(
+                {
+                    "patient_id": patient_id,
+                    **patient_state,
+                    "vitals": raw_vitals,
+                    **adherence,
+                }
+            )
             for agent in self.agents.values():
                 agent.update_beliefs(task)
             result = self.task_router.route(task, self.agents)
@@ -244,7 +284,8 @@ class Orchestrator:
             agent_id="orchestrator",
             action_type="orchestration_cycle",
             action_detail={
-                "goals": goals, "n_tasks": len(resolved_tasks),
+                "goals": goals,
+                "n_tasks": len(resolved_tasks),
                 "events": [e["type"] for e in events],
             },
         )
@@ -260,9 +301,14 @@ class Orchestrator:
             },
         }
 
-    def log_clinician_override(self, state: dict, proposed_action: int,
-                                override_action: int, clinician_id: str,
-                                rationale: str):
+    def log_clinician_override(
+        self,
+        state: dict,
+        proposed_action: int,
+        override_action: int,
+        clinician_id: str,
+        rationale: str,
+    ):
         """
         Tier 2 HiTL: Log clinician override as 5-tuple for offline policy update.
         Tuple: <s_t, a_proposed, a_override, clinician_id, rationale>

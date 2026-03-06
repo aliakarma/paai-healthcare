@@ -32,11 +32,12 @@ import warnings
 import numpy as np
 from scipy import stats
 
-
 # ── DeLong implementation ─────────────────────────────────────────────────────
 
-def _structural_components(y_true: np.ndarray,
-                            y_score: np.ndarray) -> tuple[float, np.ndarray, np.ndarray]:
+
+def _structural_components(
+    y_true: np.ndarray, y_score: np.ndarray
+) -> tuple[float, np.ndarray, np.ndarray]:
     """Compute the AUC and its structural components (V10, V01) for one classifier.
 
     These components are the building blocks of the DeLong variance estimator.
@@ -55,8 +56,8 @@ def _structural_components(y_true: np.ndarray,
     pos_mask = y_true == 1
     neg_mask = y_true == 0
 
-    pos_scores = y_score[pos_mask]   # shape (n_pos,)
-    neg_scores = y_score[neg_mask]   # shape (n_neg,)
+    pos_scores = y_score[pos_mask]  # shape (n_pos,)
+    neg_scores = y_score[neg_mask]  # shape (n_neg,)
 
     n_pos = len(pos_scores)
     n_neg = len(neg_scores)
@@ -66,25 +67,25 @@ def _structural_components(y_true: np.ndarray,
 
     # V10[i] = fraction of negatives that score strictly below positive[i]
     #          + 0.5 * fraction tied  (Wilcoxon kernel)
-    V10 = np.array([
-        np.mean(neg_scores < p) + 0.5 * np.mean(neg_scores == p)
-        for p in pos_scores
-    ], dtype=float)
+    V10 = np.array(
+        [np.mean(neg_scores < p) + 0.5 * np.mean(neg_scores == p) for p in pos_scores],
+        dtype=float,
+    )
 
     # V01[j] = fraction of positives that score strictly above negative[j]
     #          + 0.5 * fraction tied
-    V01 = np.array([
-        np.mean(pos_scores > n) + 0.5 * np.mean(pos_scores == n)
-        for n in neg_scores
-    ], dtype=float)
+    V01 = np.array(
+        [np.mean(pos_scores > n) + 0.5 * np.mean(pos_scores == n) for n in neg_scores],
+        dtype=float,
+    )
 
     auc = float(V10.mean())
     return auc, V10, V01
 
 
-def delong_test(y_true: np.ndarray,
-                y_score_a: np.ndarray,
-                y_score_b: np.ndarray) -> float:
+def delong_test(
+    y_true: np.ndarray, y_score_a: np.ndarray, y_score_b: np.ndarray
+) -> float:
     """DeLong et al. (1988) test for the equality of two AUC values.
 
     Tests H₀: AUC_A = AUC_B using the non-parametric variance estimator
@@ -106,16 +107,14 @@ def delong_test(y_true: np.ndarray,
     ValueError
         If y_true contains only one class, or if array lengths do not match.
     """
-    y_true    = np.asarray(y_true,    dtype=int)
+    y_true = np.asarray(y_true, dtype=int)
     y_score_a = np.asarray(y_score_a, dtype=float)
     y_score_b = np.asarray(y_score_b, dtype=float)
 
     if len(y_true) != len(y_score_a) or len(y_true) != len(y_score_b):
-        raise ValueError(
-            "y_true, y_score_a, and y_score_b must have the same length."
-        )
+        raise ValueError("y_true, y_score_a, and y_score_b must have the same length.")
 
-    n     = len(y_true)
+    n = len(y_true)
     n_pos = int(y_true.sum())
     n_neg = n - n_pos
 
@@ -134,7 +133,7 @@ def delong_test(y_true: np.ndarray,
     def _cov2(u: np.ndarray, v: np.ndarray) -> np.ndarray:
         """2×2 sample covariance matrix of column vectors u and v."""
         m = np.column_stack([u, v])  # (n, 2)
-        return np.cov(m, rowvar=False, ddof=1)   # (2, 2)
+        return np.cov(m, rowvar=False, ddof=1)  # (2, 2)
 
     S10 = _cov2(V10_a, V10_b)  # (2, 2)
     S01 = _cov2(V01_a, V01_b)  # (2, 2)
@@ -143,12 +142,12 @@ def delong_test(y_true: np.ndarray,
 
     # ── Test statistic ────────────────────────────────────────────────────────
     # L = [1, -1]  (we test the difference AUC_A - AUC_B)
-    L = np.array([1., -1.])
+    L = np.array([1.0, -1.0])
     auc_diff = auc_a - auc_b
 
-    var_diff = float(L @ S @ L)   # scalar variance of (AUC_A - AUC_B)
+    var_diff = float(L @ S @ L)  # scalar variance of (AUC_A - AUC_B)
 
-    if var_diff <= 0.:
+    if var_diff <= 0.0:
         warnings.warn(
             "DeLong variance estimate is non-positive "
             f"(var={var_diff:.6e}).  Returning p=1.0.",
@@ -160,7 +159,7 @@ def delong_test(y_true: np.ndarray,
     z_stat = auc_diff / np.sqrt(var_diff)
 
     # Two-tailed p-value from standard normal (DeLong et al. use N(0,1))
-    p_value = float(2. * stats.norm.sf(abs(z_stat)))
+    p_value = float(2.0 * stats.norm.sf(abs(z_stat)))
     return p_value
 
 
@@ -194,6 +193,7 @@ def delong_test_from_bootstrap(
 
 # ── Supporting tests ──────────────────────────────────────────────────────────
 
+
 def wilcoxon_test(arr_a: np.ndarray, arr_b: np.ndarray) -> float:
     """Wilcoxon signed-rank test for paired comparisons of bootstrap samples.
 
@@ -211,8 +211,8 @@ def wilcoxon_test(arr_a: np.ndarray, arr_b: np.ndarray) -> float:
         return 1.0
     a, b = np.asarray(arr_a[:n], dtype=float), np.asarray(arr_b[:n], dtype=float)
     diffs = a - b
-    if np.all(diffs == 0.):
-        return 1.0   # identical — trivially equal
+    if np.all(diffs == 0.0):
+        return 1.0  # identical — trivially equal
     try:
         _, p = stats.wilcoxon(a, b, alternative="two-sided")
         return float(p)
@@ -252,9 +252,7 @@ def cohens_d(arr_a: np.ndarray, arr_b: np.ndarray) -> float:
     b = np.asarray(arr_b, dtype=float)
     if len(a) < 2 or len(b) < 2:
         return 0.0
-    pooled_std = np.sqrt(
-        (np.var(a, ddof=1) + np.var(b, ddof=1)) / 2.0
-    )
+    pooled_std = np.sqrt((np.var(a, ddof=1) + np.var(b, ddof=1)) / 2.0)
     if pooled_std < 1e-12:
         return 0.0
     return float((np.mean(a) - np.mean(b)) / pooled_std)

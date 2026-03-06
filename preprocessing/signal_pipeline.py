@@ -6,6 +6,7 @@ Algorithm 1 from the paper: Signal Preprocessing and Anomaly Detection.
 Require: Raw streams S from IoT, EHR, self-reports
 Ensure:  Feature vector x, anomaly set E
 """
+
 import numpy as np
 import yaml
 from typing import Optional
@@ -23,8 +24,11 @@ class SignalPipeline:
     Denoises → normalises → featurises → gates anomalies.
     """
 
-    def __init__(self, config: Optional[dict] = None,
-                 config_path: str = "configs/preprocessing.yaml"):
+    def __init__(
+        self,
+        config: Optional[dict] = None,
+        config_path: str = "configs/preprocessing.yaml",
+    ):
         if config is None:
             with open(config_path) as f:
                 config = yaml.safe_load(f)
@@ -38,8 +42,8 @@ class SignalPipeline:
     # ------------------------------------------------------------------
     def denoise(self, signal: np.ndarray) -> np.ndarray:
         bridged = bridge_dropouts(
-            signal,
-            max_gap_samples=self.cfg["denoise"]["dropout_bridge_seconds"] // 5)
+            signal, max_gap_samples=self.cfg["denoise"]["dropout_bridge_seconds"] // 5
+        )
         return median_filter(bridged, window=self.cfg["denoise"]["window_points"])
 
     # ------------------------------------------------------------------
@@ -60,7 +64,7 @@ class SignalPipeline:
     # ------------------------------------------------------------------
     def featurise(self, channel: str, values: np.ndarray) -> dict:
         windows = self.cfg["features"]["rolling_windows_minutes"]
-        steps = [max(1, w // 5) for w in windows]   # convert minutes to 5-min steps
+        steps = [max(1, w // 5) for w in windows]  # convert minutes to 5-min steps
         return extract_all_features(channel, values, windows=steps)
 
     # ------------------------------------------------------------------
@@ -74,12 +78,12 @@ class SignalPipeline:
         anomalies = []
         bp_thr = self.thresholds["blood_pressure"]
         glc_thr = self.thresholds["glucose"]
-        hr_thr  = self.thresholds["heart_rate"]
+        hr_thr = self.thresholds["heart_rate"]
         spo2_thr = self.thresholds["spo2"]
 
-        sbp  = vitals.get("sbp", 0)
-        glc  = vitals.get("glucose_mgdl", 100)
-        hr   = vitals.get("heart_rate", 70)
+        sbp = vitals.get("sbp", 0)
+        glc = vitals.get("glucose_mgdl", 100)
+        hr = vitals.get("heart_rate", 70)
         spo2 = vitals.get("spo2", 98)
 
         if sbp >= bp_thr["systolic_emergency"]:
@@ -119,8 +123,7 @@ class SignalPipeline:
         x : np.ndarray  — 5-dim z-scored feature vector
         E : list        — anomaly set (may be empty)
         """
-        x_raw = np.array([raw_vitals.get(ch, 0.0) for ch in CHANNELS],
-                          dtype=np.float32)
+        x_raw = np.array([raw_vitals.get(ch, 0.0) for ch in CHANNELS], dtype=np.float32)
         x = self.zscore(x_raw)
         E = self.gate_anomalies(raw_vitals)
         return x, E

@@ -9,18 +9,18 @@ class TaskRouter:
     """Maps task types to agents."""
 
     TASK_AGENT_MAP = {
-        "medication_reminder":       "medicine_agent",
-        "medication_schedule":       "medicine_agent",
-        "escalate_drug_safety":      "medicine_agent",
-        "dietary_modification":      "nutrition_agent",
-        "meal_plan":                 "nutrition_agent",
-        "sodium_advisory":           "nutrition_agent",
-        "lifestyle_prompt":          "lifestyle_agent",
-        "sleep_adjustment":          "lifestyle_agent",
-        "walk_prompt":               "lifestyle_agent",
-        "escalate":                  "emergency_agent",
-        "escalate_to_clinician":     "emergency_agent",
-        "repeat_measurement":        "emergency_agent",
+        "medication_reminder": "medicine_agent",
+        "medication_schedule": "medicine_agent",
+        "escalate_drug_safety": "medicine_agent",
+        "dietary_modification": "nutrition_agent",
+        "meal_plan": "nutrition_agent",
+        "sodium_advisory": "nutrition_agent",
+        "lifestyle_prompt": "lifestyle_agent",
+        "sleep_adjustment": "lifestyle_agent",
+        "walk_prompt": "lifestyle_agent",
+        "escalate": "emergency_agent",
+        "escalate_to_clinician": "emergency_agent",
+        "repeat_measurement": "emergency_agent",
     }
 
     def route(self, task: dict, agents: dict):

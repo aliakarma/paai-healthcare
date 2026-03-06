@@ -5,6 +5,7 @@ Stochastic patient adherence model for medication and dietary compliance.
 Uses a Markov-like process with autocorrelation to model realistic
 adherence patterns including streaks and lapses.
 """
+
 import numpy as np
 
 
@@ -35,14 +36,12 @@ class AdherenceModel:
         for d in range(n_days):
             # Autocorrelated adherence: weighted mean of recent history
             if d == 0:
-                med_arr[d] = self.rng.beta(
-                    med_base * 10, (1 - med_base) * 10)
-                diet_arr[d] = self.rng.beta(
-                    diet_base * 10, (1 - diet_base) * 10)
+                med_arr[d] = self.rng.beta(med_base * 10, (1 - med_base) * 10)
+                diet_arr[d] = self.rng.beta(diet_base * 10, (1 - diet_base) * 10)
             else:
-                window = med_arr[max(0, d - mem):d]
+                window = med_arr[max(0, d - mem) : d]
                 trend_med = np.mean(window) if len(window) else med_base
-                trend_diet_w = diet_arr[max(0, d - mem):d]
+                trend_diet_w = diet_arr[max(0, d - mem) : d]
                 trend_diet = np.mean(trend_diet_w) if len(trend_diet_w) else diet_base
 
                 # Stochastic perturbation
@@ -63,8 +62,7 @@ class AdherenceModel:
             "dietary": diet_arr,
         }
 
-    def get_adherence(self, patient_id: int, day: float,
-                      total_days: int = 365) -> dict:
+    def get_adherence(self, patient_id: int, day: float, total_days: int = 365) -> dict:
         """Return adherence scores for a given day (float)."""
         if patient_id not in self._cache:
             self._initialise_patient(patient_id, total_days)
@@ -72,6 +70,5 @@ class AdherenceModel:
         return {
             "medication": float(self._cache[patient_id]["medication"][day_idx]),
             "dietary": float(self._cache[patient_id]["dietary"][day_idx]),
-            "lifestyle": float(
-                self.rng.beta(5, 3)),  # lifestyle varies more day-to-day
+            "lifestyle": float(self.rng.beta(5, 3)),  # lifestyle varies more day-to-day
         }

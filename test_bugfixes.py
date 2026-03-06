@@ -13,10 +13,10 @@ import unittest
 from unittest.mock import MagicMock, patch
 import numpy as np
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # 1. knowledge_graph.py — check_plan_conflicts inner-loop bug
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class _FakeMultiDiGraph:
     """Minimal stub that mimics networkx.MultiDiGraph edge queries."""
@@ -53,8 +53,11 @@ class _FakeMultiDiGraph:
                 for attrs in edge_list:
                     yield (src, dst, attrs) if data else (src, dst)
 
-    def number_of_nodes(self): return len(self._nodes)
-    def number_of_edges(self): return sum(len(v) for v in self._edges.values())
+    def number_of_nodes(self):
+        return len(self._nodes)
+
+    def number_of_edges(self):
+        return sum(len(v) for v in self._edges.values())
 
 
 class TestCheckPlanConflicts(unittest.TestCase):
@@ -76,21 +79,22 @@ class TestCheckPlanConflicts(unittest.TestCase):
         yaml_stub = types.ModuleType("yaml")
         yaml_stub.safe_load = lambda f: {
             "sources": {
-                "drug_food":        "/dev/null",
+                "drug_food": "/dev/null",
                 "contraindications": "/dev/null",
-                "nutrients":        "/dev/null",
+                "nutrients": "/dev/null",
             }
         }
         nx_stub = types.ModuleType("networkx")
         nx_stub.MultiDiGraph = _FakeMultiDiGraph
 
         original_yaml = sys.modules.get("yaml")
-        original_nx   = sys.modules.get("networkx")
-        sys.modules["yaml"]     = yaml_stub
+        original_nx = sys.modules.get("networkx")
+        sys.modules["yaml"] = yaml_stub
         sys.modules["networkx"] = nx_stub
 
         # Patch open so _load() silently no-ops
         import builtins
+
         real_open = builtins.open
         builtins.open = lambda *a, **kw: MagicMock(
             __enter__=lambda s: s,
@@ -106,22 +110,32 @@ class TestCheckPlanConflicts(unittest.TestCase):
 
             kg = KnowledgeGraph.__new__(KnowledgeGraph)
             # Inject a hand-crafted graph: statin→grapefruit, metformin→alcohol
-            kg.G = _FakeMultiDiGraph([
-                ("statin", "grapefruit", {
-                    "edge_type": "drug_food",
-                    "interaction": "CYP3A4 inhibition",
-                    "severity": "high",
-                    "action": "avoid",
-                    "guideline": "AHA2023",
-                }),
-                ("metformin", "alcohol", {
-                    "edge_type": "drug_food",
-                    "interaction": "lactic acidosis risk",
-                    "severity": "moderate",
-                    "action": "limit",
-                    "guideline": "ADA2024",
-                }),
-            ])
+            kg.G = _FakeMultiDiGraph(
+                [
+                    (
+                        "statin",
+                        "grapefruit",
+                        {
+                            "edge_type": "drug_food",
+                            "interaction": "CYP3A4 inhibition",
+                            "severity": "high",
+                            "action": "avoid",
+                            "guideline": "AHA2023",
+                        },
+                    ),
+                    (
+                        "metformin",
+                        "alcohol",
+                        {
+                            "edge_type": "drug_food",
+                            "interaction": "lactic acidosis risk",
+                            "severity": "moderate",
+                            "action": "limit",
+                            "guideline": "ADA2024",
+                        },
+                    ),
+                ]
+            )
         finally:
             builtins.open = real_open
             if original_yaml is not None:
@@ -144,8 +158,11 @@ class TestCheckPlanConflicts(unittest.TestCase):
             foods=["oatmeal", "chicken_breast", "apple"],
         )
         drug_food_pairs = [(c["drug"], c["food"]) for c in conflicts]
-        self.assertNotIn(("statin", "grapefruit"), drug_food_pairs,
-                         "Bug: grapefruit flagged even though it's not in plan")
+        self.assertNotIn(
+            ("statin", "grapefruit"),
+            drug_food_pairs,
+            "Bug: grapefruit flagged even though it's not in plan",
+        )
 
     def test_present_food_is_flagged(self):
         """statin → grapefruit MUST be flagged when grapefruit IS in the plan."""
@@ -155,8 +172,9 @@ class TestCheckPlanConflicts(unittest.TestCase):
             foods=["oatmeal", "grapefruit", "salmon"],
         )
         drug_food_pairs = [(c["drug"], c["food"]) for c in conflicts]
-        self.assertIn(("statin", "grapefruit"), drug_food_pairs,
-                      "Real interaction not detected")
+        self.assertIn(
+            ("statin", "grapefruit"), drug_food_pairs, "Real interaction not detected"
+        )
 
     def test_unrelated_drug_not_flagged(self):
         """metformin → grapefruit must NOT be flagged (no such edge)."""
@@ -165,8 +183,7 @@ class TestCheckPlanConflicts(unittest.TestCase):
             medications=["metformin"],
             foods=["grapefruit"],
         )
-        self.assertEqual(conflicts, [],
-                         "No metformin-grapefruit edge should exist")
+        self.assertEqual(conflicts, [], "No metformin-grapefruit edge should exist")
 
     def test_empty_inputs(self):
         """Empty medications or foods must return empty list without error."""
@@ -179,6 +196,7 @@ class TestCheckPlanConflicts(unittest.TestCase):
 # 2. nutrition_agent.py — fiber double-count in _local_replan
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestLocalReplan(unittest.TestCase):
     """_local_replan must correctly subtract the old snack's fiber before
     adding the new snack's fiber — the old code subtracted new.fiber twice.
@@ -190,22 +208,27 @@ class TestLocalReplan(unittest.TestCase):
 
         # Stub base_agent so we don't need the full BDI stack
         ba = types.ModuleType("agents.base_agent")
-        for name in ("ActionType", "AgentAction", "AgentResult",
-                      "BaseAgent", "PatientState", "Urgency"):
+        for name in (
+            "ActionType",
+            "AgentAction",
+            "AgentResult",
+            "BaseAgent",
+            "PatientState",
+            "Urgency",
+        ):
             obj = MagicMock()
             obj.__mro_entries__ = lambda bases: (object,)
             setattr(ba, name, obj)
 
         # BaseAgent stub: just stores attributes
         class _BaseAgent:
-            def __init__(self, agent_id, policy_registry,
-                         knowledge_graph, audit_log):
+            def __init__(self, agent_id, policy_registry, knowledge_graph, audit_log):
                 self.agent_id = agent_id
                 self.registry = policy_registry
-                self.kg       = knowledge_graph
-                self.audit    = audit_log
-                self.beliefs  = {}
-                self._log     = MagicMock()
+                self.kg = knowledge_graph
+                self.audit = audit_log
+                self.beliefs = {}
+                self._log = MagicMock()
 
         ba.BaseAgent = _BaseAgent
         sys.modules["agents.base_agent"] = ba
@@ -213,19 +236,24 @@ class TestLocalReplan(unittest.TestCase):
         if "agents.nutrition_agent" in sys.modules:
             del sys.modules["agents.nutrition_agent"]
 
-        from agents.nutrition_agent import NutritionAgent, FoodItem, MealPlan, NutrientTargets
+        from agents.nutrition_agent import (
+            NutritionAgent,
+            FoodItem,
+            MealPlan,
+            NutrientTargets,
+        )
 
         agent = NutritionAgent(
-            policy_registry = MagicMock(),
-            knowledge_graph = MagicMock(
+            policy_registry=MagicMock(),
+            knowledge_graph=MagicMock(
                 get_drug_interactions=lambda d: [],
                 check_plan_conflicts=lambda m, f: [],
             ),
-            audit_log       = MagicMock(),
+            audit_log=MagicMock(),
         )
         agent.beliefs = {
             "conditions": [],
-            "allergies":  {},
+            "allergies": {},
             "excluded_foods": set(),
         }
         agent.registry.get_sodium_cap = MagicMock(return_value=2.3)
@@ -235,28 +263,45 @@ class TestLocalReplan(unittest.TestCase):
         agent, FoodItem, MealPlan, NutrientTargets = self._make_agent()
 
         old_snack = FoodItem(
-            food_id="apple", name="Apple", kcal=80, sodium_mg=2,
-            fiber_g=4.0, protein_g=0, potassium_mg=200,
-            glycemic_index=36, meal_slot="snack", tags=("low_gi",),
+            food_id="apple",
+            name="Apple",
+            kcal=80,
+            sodium_mg=2,
+            fiber_g=4.0,
+            protein_g=0,
+            potassium_mg=200,
+            glycemic_index=36,
+            meal_slot="snack",
+            tags=("low_gi",),
         )
         new_snack = FoodItem(
-            food_id="almonds", name="Almonds", kcal=160, sodium_mg=0,
-            fiber_g=3.0, protein_g=6, potassium_mg=200,
-            glycemic_index=0, meal_slot="snack", tags=("low_gi",),
+            food_id="almonds",
+            name="Almonds",
+            kcal=160,
+            sodium_mg=0,
+            fiber_g=3.0,
+            protein_g=6,
+            potassium_mg=200,
+            glycemic_index=0,
+            meal_slot="snack",
+            tags=("low_gi",),
         )
 
         targets = NutrientTargets(
-            kcal=2000, sodium_mg=2300, fiber_g=25,
-            protein_g=56, potassium_mg=3500,
+            kcal=2000,
+            sodium_mg=2300,
+            fiber_g=25,
+            protein_g=56,
+            potassium_mg=3500,
         )
 
         # Plan is 300 kcal over target — should trigger a snack swap
         plan = MealPlan(
-            snack            = old_snack,
-            total_kcal       = 2300.0,   # 300 over target
-            total_sodium_mg  = 1200.0,
-            total_fiber_g    = 20.0,     # includes old snack's 4.0 g
-            targets          = targets,
+            snack=old_snack,
+            total_kcal=2300.0,  # 300 over target
+            total_sodium_mg=1200.0,
+            total_fiber_g=20.0,  # includes old snack's 4.0 g
+            targets=targets,
         )
 
         result = agent._local_replan(plan, targets, glucose=100, deviation_kcal=300)
@@ -265,7 +310,9 @@ class TestLocalReplan(unittest.TestCase):
             # Old fiber (4.0) subtracted, new fiber (3.0) added → 20 - 4 + 3 = 19
             expected_fiber = 20.0 - old_snack.fiber_g + new_snack.fiber_g
             self.assertAlmostEqual(
-                result.total_fiber_g, expected_fiber, places=5,
+                result.total_fiber_g,
+                expected_fiber,
+                places=5,
                 msg=(
                     f"Fiber double-count bug: expected {expected_fiber:.1f} g "
                     f"but got {result.total_fiber_g:.1f} g"
@@ -277,26 +324,42 @@ class TestLocalReplan(unittest.TestCase):
         agent, FoodItem, MealPlan, NutrientTargets = self._make_agent()
 
         old_snack = FoodItem(
-            food_id="crackers", name="Crackers", kcal=150, sodium_mg=300,
-            fiber_g=2.0, protein_g=3, potassium_mg=50,
-            glycemic_index=72, meal_slot="snack",
+            food_id="crackers",
+            name="Crackers",
+            kcal=150,
+            sodium_mg=300,
+            fiber_g=2.0,
+            protein_g=3,
+            potassium_mg=50,
+            glycemic_index=72,
+            meal_slot="snack",
         )
         low_sodium_snack = FoodItem(
-            food_id="almonds", name="Almonds", kcal=80, sodium_mg=0,
-            fiber_g=3.0, protein_g=6, potassium_mg=200,
-            glycemic_index=0, meal_slot="snack", tags=("low_gi",),
+            food_id="almonds",
+            name="Almonds",
+            kcal=80,
+            sodium_mg=0,
+            fiber_g=3.0,
+            protein_g=6,
+            potassium_mg=200,
+            glycemic_index=0,
+            meal_slot="snack",
+            tags=("low_gi",),
         )
 
         targets = NutrientTargets(
-            kcal=2000, sodium_mg=2300, fiber_g=25,
-            protein_g=56, potassium_mg=3500,
+            kcal=2000,
+            sodium_mg=2300,
+            fiber_g=25,
+            protein_g=56,
+            potassium_mg=3500,
         )
         plan = MealPlan(
-            snack            = old_snack,
-            total_kcal       = 2350.0,   # 350 over
-            total_sodium_mg  = 2100.0,
-            total_fiber_g    = 18.0,
-            targets          = targets,
+            snack=old_snack,
+            total_kcal=2350.0,  # 350 over
+            total_sodium_mg=2100.0,
+            total_fiber_g=18.0,
+            targets=targets,
         )
 
         result = agent._local_replan(plan, targets, glucose=100, deviation_kcal=350)
@@ -309,6 +372,7 @@ class TestLocalReplan(unittest.TestCase):
 # ══════════════════════════════════════════════════════════════════════════════
 # 3. orchestrator.py — belief contamination across agents
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestBeliefIsolation(unittest.TestCase):
     """update_beliefs must be called ONLY on the routed agent.
@@ -331,35 +395,36 @@ class TestBeliefIsolation(unittest.TestCase):
 
         def _make_agent(agent_id):
             agent = MagicMock()
-            agent.agent_id   = agent_id
-            agent.beliefs    = {}
+            agent.agent_id = agent_id
+            agent.beliefs = {}
             agent.deliberate = MagicMock(return_value=[])
-            agent.act        = MagicMock(return_value=MagicMock(actions=[]))
+            agent.act = MagicMock(return_value=MagicMock(actions=[]))
 
             def _update_beliefs(task):
                 agent.beliefs.update(task)
+
             agent.update_beliefs = MagicMock(side_effect=_update_beliefs)
             return agent
 
         agents = {
-            "medicine_agent":   _make_agent("medicine_agent"),
-            "nutrition_agent":  _make_agent("nutrition_agent"),
-            "activity_agent":   _make_agent("activity_agent"),
+            "medicine_agent": _make_agent("medicine_agent"),
+            "nutrition_agent": _make_agent("nutrition_agent"),
+            "activity_agent": _make_agent("activity_agent"),
             "monitoring_agent": _make_agent("monitoring_agent"),
         }
 
-        kg       = MagicMock()
-        kg.check_plan_conflicts             = MagicMock(return_value=[])
-        kg.get_condition_contraindications  = MagicMock(return_value=[])
+        kg = MagicMock()
+        kg.check_plan_conflicts = MagicMock(return_value=[])
+        kg.get_condition_contraindications = MagicMock(return_value=[])
 
         audit = MagicMock()
         audit.write = MagicMock(return_value="abc123")
 
         orch = Orchestrator(
-            agents          = agents,
-            policy_registry = MagicMock(),
-            knowledge_graph = kg,
-            audit_log       = audit,
+            agents=agents,
+            policy_registry=MagicMock(),
+            knowledge_graph=kg,
+            audit_log=audit,
         )
         return orch, agents
 
@@ -368,10 +433,10 @@ class TestBeliefIsolation(unittest.TestCase):
         orch, agents = self._make_orchestrator()
 
         task = {
-            "task_type":    "meal_plan",
-            "patient_id":   "P001",
-            "conditions":   ["hypertension"],
-            "glucose_target":  140,        # nutrition-domain key
+            "task_type": "meal_plan",
+            "patient_id": "P001",
+            "conditions": ["hypertension"],
+            "glucose_target": 140,  # nutrition-domain key
             "food_exclusions": ["grapefruit"],
         }
 
@@ -379,26 +444,30 @@ class TestBeliefIsolation(unittest.TestCase):
 
         # nutrition_agent must have received the full task (including domain keys)
         nutrition_call_args = agents["nutrition_agent"].update_beliefs.call_args_list
-        self.assertGreater(len(nutrition_call_args), 0,
-                           "nutrition_agent.update_beliefs was never called")
+        self.assertGreater(
+            len(nutrition_call_args),
+            0,
+            "nutrition_agent.update_beliefs was never called",
+        )
 
         full_task_seen = any(
-            "glucose_target" in call.args[0] or
-            "glucose_target" in call.kwargs.get("task", {})
+            "glucose_target" in call.args[0]
+            or "glucose_target" in call.kwargs.get("task", {})
             for call in nutrition_call_args
         )
-        self.assertTrue(full_task_seen,
-                        "nutrition_agent never received glucose_target key")
+        self.assertTrue(
+            full_task_seen, "nutrition_agent never received glucose_target key"
+        )
 
     def test_non_chosen_agents_receive_no_domain_keys(self):
         """medicine_agent must NOT receive glucose_target or food_exclusions."""
         orch, agents = self._make_orchestrator()
 
         task = {
-            "task_type":       "meal_plan",
-            "patient_id":      "P001",
-            "conditions":      ["hypertension"],
-            "glucose_target":  140,
+            "task_type": "meal_plan",
+            "patient_id": "P001",
+            "conditions": ["hypertension"],
+            "glucose_target": 140,
             "food_exclusions": ["grapefruit"],
         }
 
@@ -407,11 +476,13 @@ class TestBeliefIsolation(unittest.TestCase):
         for call in agents["medicine_agent"].update_beliefs.call_args_list:
             arg = call.args[0] if call.args else {}
             self.assertNotIn(
-                "glucose_target", arg,
+                "glucose_target",
+                arg,
                 "Bug: glucose_target leaked into medicine_agent beliefs",
             )
             self.assertNotIn(
-                "food_exclusions", arg,
+                "food_exclusions",
+                arg,
                 "Bug: food_exclusions leaked into medicine_agent beliefs",
             )
 
@@ -420,7 +491,7 @@ class TestBeliefIsolation(unittest.TestCase):
         orch, agents = self._make_orchestrator()
 
         task = {
-            "task_type":  "meal_plan",
+            "task_type": "meal_plan",
             "patient_id": "P002",
             "conditions": ["ckd", "hypertension"],
             "glucose_target": 130,
@@ -432,7 +503,8 @@ class TestBeliefIsolation(unittest.TestCase):
             all_calls = agent.update_beliefs.call_args_list
             received_patient_id = any(
                 call.args[0].get("patient_id") == "P002"
-                for call in all_calls if call.args
+                for call in all_calls
+                if call.args
             )
             self.assertTrue(
                 received_patient_id,
@@ -443,6 +515,7 @@ class TestBeliefIsolation(unittest.TestCase):
 # ══════════════════════════════════════════════════════════════════════════════
 # 4. baselines — metrics computed from data, not hardcoded
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestBaselineMetrics(unittest.TestCase):
     """Verify that baseline metric arrays are derived from actual data,
@@ -457,10 +530,11 @@ class TestBaselineMetrics(unittest.TestCase):
         resamples of precision have non-zero variance.
         """
         import os, csv
+
         os.makedirs(tmp_dir, exist_ok=True)
 
         vitals_rows = []
-        event_rows  = []
+        event_rows = []
         rng = np.random.default_rng(42)
 
         # 20 patients, 40 timesteps each
@@ -470,30 +544,39 @@ class TestBaselineMetrics(unittest.TestCase):
             for step in range(40):
                 t = step * 5
                 # Continuous Gaussian variation — not just one spike
-                sbp  = sbp_base + rng.normal(0, 15)
+                sbp = sbp_base + rng.normal(0, 15)
                 # Force several true escalation events spread across patients
                 if step in (10, 25) and pid % 4 == 0:
                     sbp = 185.0
-                sbp = max(80., min(220., sbp))
+                sbp = max(80.0, min(220.0, sbp))
 
-                vitals_rows.append({
-                    "patient_id":          pid,
-                    "t_minutes":           t,
-                    "sbp":                 round(sbp, 1),
-                    "dbp":                 round(75 + rng.normal(0, 8), 1),
-                    "glucose_mgdl":        round(100 + rng.normal(0, 25), 1),
-                    "heart_rate":          round(70 + rng.normal(0, 10), 1),
-                    "spo2":                round(min(100., 97 + rng.normal(0, 1.5)), 1),
-                    "adherence_med":       round(float(np.clip(0.7 + rng.normal(0, 0.15), 0, 1)), 3),
-                    "adherence_diet":      round(float(np.clip(0.5 + rng.normal(0, 0.15), 0, 1)), 3),
-                    "adherence_lifestyle": round(float(np.clip(0.6 + rng.normal(0, 0.15), 0, 1)), 3),
-                })
+                vitals_rows.append(
+                    {
+                        "patient_id": pid,
+                        "t_minutes": t,
+                        "sbp": round(sbp, 1),
+                        "dbp": round(75 + rng.normal(0, 8), 1),
+                        "glucose_mgdl": round(100 + rng.normal(0, 25), 1),
+                        "heart_rate": round(70 + rng.normal(0, 10), 1),
+                        "spo2": round(min(100.0, 97 + rng.normal(0, 1.5)), 1),
+                        "adherence_med": round(
+                            float(np.clip(0.7 + rng.normal(0, 0.15), 0, 1)), 3
+                        ),
+                        "adherence_diet": round(
+                            float(np.clip(0.5 + rng.normal(0, 0.15), 0, 1)), 3
+                        ),
+                        "adherence_lifestyle": round(
+                            float(np.clip(0.6 + rng.normal(0, 0.15), 0, 1)), 3
+                        ),
+                    }
+                )
                 if sbp > 160:
                     event_rows.append({"patient_id": pid, "t_minutes": t})
 
         with open(f"{tmp_dir}/vitals_longitudinal.csv", "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=vitals_rows[0].keys())
-            w.writeheader(); w.writerows(vitals_rows)
+            w.writeheader()
+            w.writerows(vitals_rows)
 
         with open(f"{tmp_dir}/events.csv", "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=["patient_id", "t_minutes"])
@@ -515,7 +598,8 @@ class TestBaselineMetrics(unittest.TestCase):
         self.assertGreater(len(prec), 0)
         # A constant array [0.71]*N would have std == 0
         self.assertGreater(
-            float(np.std(prec)) + float(np.max(prec) - np.min(prec)), 0.,
+            float(np.std(prec)) + float(np.max(prec) - np.min(prec)),
+            0.0,
             "med_precision is constant — likely still hardcoded",
         )
 
@@ -532,8 +616,8 @@ class TestBaselineMetrics(unittest.TestCase):
         self.assertIsInstance(lat, np.ndarray)
         self.assertGreater(len(lat), 0)
         # Verify at least some latency values are plausible (0–3600 s)
-        self.assertTrue(np.all(lat >= 0.),    "Negative latency")
-        self.assertTrue(np.all(lat <= 3600.), "Latency > 1 hour cap")
+        self.assertTrue(np.all(lat >= 0.0), "Negative latency")
+        self.assertTrue(np.all(lat <= 3600.0), "Latency > 1 hour cap")
 
     def test_human_schedule_only_escalates_at_review_time(self):
         """Human schedule must only produce action=4 at hour 9."""
@@ -542,7 +626,7 @@ class TestBaselineMetrics(unittest.TestCase):
         rng = np.random.default_rng(42)
 
         # 09:00 with high BP → escalate
-        row_09 = {"t_minutes": 9 * 60, "sbp": 180}   # hour 9 → review
+        row_09 = {"t_minutes": 9 * 60, "sbp": 180}  # hour 9 → review
         action_09, _ = _score_row(row_09, rng)
         self.assertEqual(action_09, 4, "Expected escalation at 09:00 with SBP=180")
 
@@ -561,10 +645,10 @@ class TestBaselineMetrics(unittest.TestCase):
             res = evaluate(tmp)
 
         scores = res["roc_scores"]
-        self.assertTrue(np.all(scores >= 0.), "Scores below 0")
-        self.assertTrue(np.all(scores <= 1.), "Scores above 1")
+        self.assertTrue(np.all(scores >= 0.0), "Scores below 0")
+        self.assertTrue(np.all(scores <= 1.0), "Scores above 1")
         # Verify they are not all identical
-        self.assertGreater(np.std(scores), 0., "All scores identical")
+        self.assertGreater(np.std(scores), 0.0, "All scores identical")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

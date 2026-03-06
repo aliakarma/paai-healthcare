@@ -79,13 +79,14 @@ HYPERTENSION_SELF_CARE_THRESHOLD: float = 160.0
 # Domain-specific data structures
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class EscalationStatus(Enum):
     """Outcome of a single call to :meth:`EmergencyAgent.act`."""
 
-    NO_ACTION              = auto()  # Vitals within safe range
-    REPEAT_SCHEDULED       = auto()  # First or second repeat measurement queued
+    NO_ACTION = auto()  # Vitals within safe range
+    REPEAT_SCHEDULED = auto()  # First or second repeat measurement queued
     ESCALATED_TO_CLINICIAN = auto()  # Persistent — alert sent
-    DE_ESCALATED           = auto()  # Resolved on re-measurement
+    DE_ESCALATED = auto()  # Resolved on re-measurement
 
 
 @dataclass
@@ -98,9 +99,9 @@ class RepeatMeasurementState:
         created_at:        Unix timestamp when the protocol was initiated.
     """
 
-    count:            int             = 0
-    last_vitals_dict: dict[str, Any]  = field(default_factory=dict)
-    created_at:       float           = field(default_factory=time.time)
+    count: int = 0
+    last_vitals_dict: dict[str, Any] = field(default_factory=dict)
+    created_at: float = field(default_factory=time.time)
 
 
 @dataclass
@@ -121,22 +122,23 @@ class AlertPacket:
         repeat_count:          Number of confirmatory readings obtained.
     """
 
-    patient_pseudonym:    str
-    timestamp:            float
-    triggering_vitals:    dict[str, Any]
-    recent_trends:        dict[str, Any]
+    patient_pseudonym: str
+    timestamp: float
+    triggering_vitals: dict[str, Any]
+    recent_trends: dict[str, Any]
     medications_on_board: list[Any]
     adherence_last_7days: dict[str, Any]
     recent_actions_tried: list[dict]
-    self_care_provided:   list[str]
-    consent_verified:     bool  = True
-    encrypted:            bool  = True
-    repeat_count:         int   = PERSISTENCE_THRESHOLD
+    self_care_provided: list[str]
+    consent_verified: bool = True
+    encrypted: bool = True
+    repeat_count: int = PERSISTENCE_THRESHOLD
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # EmergencyAgent
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class EmergencyAgent(BaseAgent):
     """BDI Emergency Escalation Agent — watch-and-repeat before alert.
@@ -186,10 +188,10 @@ class EmergencyAgent(BaseAgent):
         persistence_threshold: int = PERSISTENCE_THRESHOLD,
     ) -> None:
         super().__init__(
-            agent_id        = "emergency_agent",
-            policy_registry = policy_registry,
-            knowledge_graph = knowledge_graph,
-            audit_log       = audit_log,
+            agent_id="emergency_agent",
+            policy_registry=policy_registry,
+            knowledge_graph=knowledge_graph,
+            audit_log=audit_log,
         )
         self._persistence_threshold = persistence_threshold
         # In-memory per-patient repeat state (offload to feature store in prod)
@@ -216,32 +218,35 @@ class EmergencyAgent(BaseAgent):
         """
         vitals = state.vitals
         vitals_dict = {
-            "sbp":          vitals.sbp,
-            "dbp":          vitals.dbp,
+            "sbp": vitals.sbp,
+            "dbp": vitals.dbp,
             "glucose_mgdl": vitals.glucose_mgdl,
-            "heart_rate":   vitals.heart_rate,
-            "spo2":         vitals.spo2,
+            "heart_rate": vitals.heart_rate,
+            "spo2": vitals.spo2,
         }
 
-        self.beliefs.update({
-            "patient_id":       state.patient_id,
-            "vitals":           vitals,
-            "vitals_dict":      {k: v for k, v in vitals_dict.items()
-                                  if v is not None},
-            "trends":           state.trends,
-            "prescriptions":    state.prescriptions,
-            "adherence_history": {
-                "adherence_med":  state.adherence_med,
-                "adherence_diet": state.adherence_diet,
-            },
-            "actions_tried":    state.actions_tried,
-            "severe_symptoms":  state.extra.get("severe_symptoms", False),
-            "consent_alerts":   state.extra.get("consent_alerts", True),
-        })
+        self.beliefs.update(
+            {
+                "patient_id": state.patient_id,
+                "vitals": vitals,
+                "vitals_dict": {k: v for k, v in vitals_dict.items() if v is not None},
+                "trends": state.trends,
+                "prescriptions": state.prescriptions,
+                "adherence_history": {
+                    "adherence_med": state.adherence_med,
+                    "adherence_diet": state.adherence_diet,
+                },
+                "actions_tried": state.actions_tried,
+                "severe_symptoms": state.extra.get("severe_symptoms", False),
+                "consent_alerts": state.extra.get("consent_alerts", True),
+            }
+        )
         self._log.debug(
             "Perceived: patient=%s sbp=%s glucose=%s spo2=%s",
             state.patient_id,
-            vitals.sbp, vitals.glucose_mgdl, vitals.spo2,
+            vitals.sbp,
+            vitals.glucose_mgdl,
+            vitals.spo2,
         )
 
     def deliberate(self) -> list[dict]:
@@ -258,19 +263,23 @@ class EmergencyAgent(BaseAgent):
         Returns:
             List of zero or one intention dicts.
         """
-        vitals_dict    = self.beliefs.get("vitals_dict", {})
+        vitals_dict = self.beliefs.get("vitals_dict", {})
         severe_symptoms = bool(self.beliefs.get("severe_symptoms", False))
 
         if self.registry.should_escalate(vitals_dict) or severe_symptoms:
-            return [{
-                "type":    "initiate_repeat_measurement",
-                "urgency": Urgency.IMMEDIATE.value,
-            }]
+            return [
+                {
+                    "type": "initiate_repeat_measurement",
+                    "urgency": Urgency.IMMEDIATE.value,
+                }
+            ]
         if self.registry.should_watch(vitals_dict):
-            return [{
-                "type":    "monitor_watch_zone",
-                "urgency": Urgency.HIGH.value,
-            }]
+            return [
+                {
+                    "type": "monitor_watch_zone",
+                    "urgency": Urgency.HIGH.value,
+                }
+            ]
         return []
 
     def act(self, intentions: list[dict]) -> AgentResult:
@@ -302,14 +311,14 @@ class EmergencyAgent(BaseAgent):
         """
         if not intentions:
             return AgentResult(
-                agent_id = self.agent_id,
-                actions  = [],
-                metadata = {"status": EscalationStatus.NO_ACTION.name},
+                agent_id=self.agent_id,
+                actions=[],
+                metadata={"status": EscalationStatus.NO_ACTION.name},
             )
 
         actions: list[AgentAction] = []
-        status  = EscalationStatus.NO_ACTION
-        pid     = str(self.beliefs.get("patient_id", "unknown"))
+        status = EscalationStatus.NO_ACTION
+        pid = str(self.beliefs.get("patient_id", "unknown"))
         vitals_dict = self.beliefs.get("vitals_dict", {})
 
         for intent in intentions:
@@ -318,9 +327,9 @@ class EmergencyAgent(BaseAgent):
             # ── Watch-zone monitoring (not yet acute) ─────────────────────────
             if intent_type == "monitor_watch_zone":
                 action = self._make_action(
-                    action_type = ActionType.SELF_CARE_GUIDANCE,
-                    urgency     = Urgency.HIGH,
-                    payload     = {
+                    action_type=ActionType.SELF_CARE_GUIDANCE,
+                    urgency=Urgency.HIGH,
+                    payload={
                         "message": (
                             "Your readings are in a watch zone.  "
                             "Please rest, stay hydrated, and continue "
@@ -328,7 +337,7 @@ class EmergencyAgent(BaseAgent):
                         ),
                         "vitals": vitals_dict,
                     },
-                    rationale = "Vitals in watch zone — monitoring without escalation.",
+                    rationale="Vitals in watch zone — monitoring without escalation.",
                 )
                 actions.append(action)
                 status = EscalationStatus.NO_ACTION
@@ -336,28 +345,26 @@ class EmergencyAgent(BaseAgent):
 
             # ── Repeat-measurement state machine ──────────────────────────────
             if intent_type == "initiate_repeat_measurement":
-                rep_state = self._pending_repeats.get(
-                    pid, RepeatMeasurementState())
+                rep_state = self._pending_repeats.get(pid, RepeatMeasurementState())
 
                 # ── Still collecting confirmatory readings ────────────────────
                 if rep_state.count < self._persistence_threshold:
-                    rep_state.count          += 1
+                    rep_state.count += 1
                     rep_state.last_vitals_dict = vitals_dict
                     self._pending_repeats[pid] = rep_state
 
                     next_interval = REPEAT_INTERVALS_MINUTES[
-                        min(rep_state.count - 1,
-                            len(REPEAT_INTERVALS_MINUTES) - 1)
+                        min(rep_state.count - 1, len(REPEAT_INTERVALS_MINUTES) - 1)
                     ]
                     self_care = self._self_care_guidance(vitals_dict)
                     action = self._make_action(
-                        action_type = ActionType.REPEAT_MEASUREMENT,
-                        urgency     = Urgency.HIGH,
-                        payload     = {
-                            "repeat_number":          rep_state.count,
+                        action_type=ActionType.REPEAT_MEASUREMENT,
+                        urgency=Urgency.HIGH,
+                        payload={
+                            "repeat_number": rep_state.count,
                             "next_repeat_in_minutes": next_interval,
-                            "self_care_guidance":     self_care,
-                            "vitals_at_trigger":      vitals_dict,
+                            "self_care_guidance": self_care,
+                            "vitals_at_trigger": vitals_dict,
                             "message": (
                                 f"Confirmatory measurement {rep_state.count}/"
                                 f"{self._persistence_threshold} scheduled in "
@@ -365,7 +372,7 @@ class EmergencyAgent(BaseAgent):
                                 f"Follow self-care guidance while waiting."
                             ),
                         },
-                        rationale = (
+                        rationale=(
                             f"Watch-and-repeat: repeat {rep_state.count} of "
                             f"{self._persistence_threshold}."
                         ),
@@ -375,29 +382,29 @@ class EmergencyAgent(BaseAgent):
 
                 # ── Persistence check after required repeats ──────────────────
                 else:
-                    still_abnormal = (
-                        self.registry.should_escalate(vitals_dict) or
-                        self.registry.should_watch(vitals_dict)
-                    )
+                    still_abnormal = self.registry.should_escalate(
+                        vitals_dict
+                    ) or self.registry.should_watch(vitals_dict)
 
                     if still_abnormal:
                         # ── Escalate ──────────────────────────────────────────
                         self_care = self._self_care_guidance(vitals_dict)
-                        packet    = self._compose_alert_packet(
-                            vitals_dict, self_care, rep_state.count)
+                        packet = self._compose_alert_packet(
+                            vitals_dict, self_care, rep_state.count
+                        )
                         action = self._make_action(
-                            action_type = ActionType.ESCALATE_TO_CLINICIAN,   # was ESCALATE_CLINICIAN (Issue 2)
-                            urgency     = Urgency.IMMEDIATE,
-                            payload     = {
-                                "alert_packet":    self._packet_to_dict(packet),
-                                "self_care":       self_care,
+                            action_type=ActionType.ESCALATE_TO_CLINICIAN,  # was ESCALATE_CLINICIAN (Issue 2)
+                            urgency=Urgency.IMMEDIATE,
+                            payload={
+                                "alert_packet": self._packet_to_dict(packet),
+                                "self_care": self_care,
                                 "message": (
                                     "Persistent abnormal readings confirmed "
                                     f"after {rep_state.count} measurements.  "
                                     "Secure alert sent to clinician."
                                 ),
                             },
-                            rationale = (
+                            rationale=(
                                 f"Persistent exceedance after "
                                 f"{rep_state.count} repeat readings — "
                                 "escalating to clinician."
@@ -412,17 +419,17 @@ class EmergencyAgent(BaseAgent):
                     else:
                         # ── De-escalate ───────────────────────────────────────
                         action = self._make_action(
-                            action_type = ActionType.DE_ESCALATE,
-                            urgency     = Urgency.ROUTINE,
-                            payload     = {
-                                "vitals":  vitals_dict,
+                            action_type=ActionType.DE_ESCALATE,
+                            urgency=Urgency.ROUTINE,
+                            payload={
+                                "vitals": vitals_dict,
                                 "message": (
                                     "Readings have returned to within normal "
                                     "range on re-measurement.  No escalation "
                                     "required at this time.  Continue monitoring."
                                 ),
                             },
-                            rationale = (
+                            rationale=(
                                 "Vitals normalised on confirmatory measurement — "
                                 "de-escalating."
                             ),
@@ -433,16 +440,18 @@ class EmergencyAgent(BaseAgent):
 
         # Only persist non-escalation actions here (escalation already persisted above)
         non_escalation = [
-            a for a in actions
-            if a.action_type != ActionType.ESCALATE_TO_CLINICIAN   # was ESCALATE_CLINICIAN (Issue 2)
+            a
+            for a in actions
+            if a.action_type
+            != ActionType.ESCALATE_TO_CLINICIAN  # was ESCALATE_CLINICIAN (Issue 2)
         ]
         self._persist_actions(non_escalation)
 
         return AgentResult(
-            agent_id = self.agent_id,
-            actions  = actions,
-            metadata = {
-                "status":             status.name,
+            agent_id=self.agent_id,
+            actions=actions,
+            metadata={
+                "status": status.name,
                 "pending_repeat_pid": pid if pid in self._pending_repeats else None,
             },
         )
@@ -490,10 +499,10 @@ class EmergencyAgent(BaseAgent):
         self.update_beliefs(task)
         result = self.act(self.deliberate())
         return {
-            "agent":   self.agent_id,
+            "agent": self.agent_id,
             "actions": [
-                a.payload | {"action_type": a.action_type.value,
-                              "urgency":     a.urgency.value}
+                a.payload
+                | {"action_type": a.action_type.value, "urgency": a.urgency.value}
                 for a in result.actions
             ],
             "metadata": result.metadata,
@@ -504,7 +513,7 @@ class EmergencyAgent(BaseAgent):
     def _compose_alert_packet(
         self,
         vitals_dict: dict[str, Any],
-        self_care:   list[str],
+        self_care: list[str],
         repeat_count: int,
     ) -> AlertPacket:
         """Build the rich context packet sent to the clinician.
@@ -522,18 +531,17 @@ class EmergencyAgent(BaseAgent):
         """
         consent = bool(self.beliefs.get("consent_alerts", True))
         return AlertPacket(
-            patient_pseudonym    = str(self.beliefs.get("patient_id", "unknown")),
-            timestamp            = time.time(),
-            triggering_vitals    = vitals_dict,
-            recent_trends        = dict(self.beliefs.get("trends", {})),
-            medications_on_board = list(self.beliefs.get("prescriptions", [])),
-            adherence_last_7days = dict(
-                self.beliefs.get("adherence_history", {})),
-            recent_actions_tried = list(self.beliefs.get("actions_tried", [])),
-            self_care_provided   = self_care,
-            consent_verified     = consent,
-            encrypted            = True,
-            repeat_count         = repeat_count,
+            patient_pseudonym=str(self.beliefs.get("patient_id", "unknown")),
+            timestamp=time.time(),
+            triggering_vitals=vitals_dict,
+            recent_trends=dict(self.beliefs.get("trends", {})),
+            medications_on_board=list(self.beliefs.get("prescriptions", [])),
+            adherence_last_7days=dict(self.beliefs.get("adherence_history", {})),
+            recent_actions_tried=list(self.beliefs.get("actions_tried", [])),
+            self_care_provided=self_care,
+            consent_verified=consent,
+            encrypted=True,
+            repeat_count=repeat_count,
         )
 
     def _packet_to_dict(self, packet: AlertPacket) -> dict[str, Any]:
@@ -548,31 +556,32 @@ class EmergencyAgent(BaseAgent):
         Returns:
             JSON-serialisable dict representation of the packet.
         """
+
         def _serialise_med(m: Any) -> dict:
             if hasattr(m, "__dataclass_fields__"):
                 return {
-                    "drug":      m.drug,
-                    "dose_mg":   m.dose_mg,
+                    "drug": m.drug,
+                    "dose_mg": m.dose_mg,
                     "frequency": m.frequency,
-                    "timing":    m.timing,
-                    "route":     m.route,
+                    "timing": m.timing,
+                    "route": m.route,
                 }
             return dict(m) if isinstance(m, dict) else str(m)
 
         return {
-            "patient_pseudonym":    packet.patient_pseudonym,
-            "timestamp":            packet.timestamp,
-            "triggering_vitals":    packet.triggering_vitals,
-            "recent_trends":        packet.recent_trends,
+            "patient_pseudonym": packet.patient_pseudonym,
+            "timestamp": packet.timestamp,
+            "triggering_vitals": packet.triggering_vitals,
+            "recent_trends": packet.recent_trends,
             "medications_on_board": [
                 _serialise_med(m) for m in packet.medications_on_board
             ],
             "adherence_last_7days": packet.adherence_last_7days,
             "recent_actions_tried": packet.recent_actions_tried,
-            "self_care_provided":   packet.self_care_provided,
-            "consent_verified":     packet.consent_verified,
-            "encrypted":            packet.encrypted,
-            "repeat_count":         packet.repeat_count,
+            "self_care_provided": packet.self_care_provided,
+            "consent_verified": packet.consent_verified,
+            "encrypted": packet.encrypted,
+            "repeat_count": packet.repeat_count,
         }
 
     def _self_care_guidance(self, vitals_dict: dict[str, Any]) -> list[str]:
@@ -594,35 +603,41 @@ class EmergencyAgent(BaseAgent):
             Ordered list of plain-English guidance strings.
         """
         guidance: list[str] = []
-        sbp     = vitals_dict.get("sbp")
+        sbp = vitals_dict.get("sbp")
         glucose = vitals_dict.get("glucose_mgdl")
-        spo2    = vitals_dict.get("spo2")
-        hr      = vitals_dict.get("heart_rate")
+        spo2 = vitals_dict.get("spo2")
+        hr = vitals_dict.get("heart_rate")
 
         if sbp is not None and sbp >= HYPERTENSION_SELF_CARE_THRESHOLD:
-            guidance.extend([
-                "Sit or lie down quietly in a comfortable position.",
-                "Avoid physical exertion or stressful activities.",
-                "Stay hydrated — sip water slowly.",
-                "Take your blood pressure medication if it is due.",
-            ])
+            guidance.extend(
+                [
+                    "Sit or lie down quietly in a comfortable position.",
+                    "Avoid physical exertion or stressful activities.",
+                    "Stay hydrated — sip water slowly.",
+                    "Take your blood pressure medication if it is due.",
+                ]
+            )
 
         if glucose is not None and glucose <= HYPOGLYCAEMIA_SELF_CARE_THRESHOLD:
-            guidance.extend([
-                "Consume 15 g of fast-acting carbohydrate immediately "
-                "(e.g. 4 glucose tablets, 150 mL fruit juice).",
-                "Wait 15 minutes, then re-check your blood glucose.",
-                "If still below 70 mg/dL, repeat the 15 g carbohydrate.",
-                "Do not drive or operate machinery until fully recovered.",
-            ])
+            guidance.extend(
+                [
+                    "Consume 15 g of fast-acting carbohydrate immediately "
+                    "(e.g. 4 glucose tablets, 150 mL fruit juice).",
+                    "Wait 15 minutes, then re-check your blood glucose.",
+                    "If still below 70 mg/dL, repeat the 15 g carbohydrate.",
+                    "Do not drive or operate machinery until fully recovered.",
+                ]
+            )
 
         if spo2 is not None and spo2 <= 93.0:
-            guidance.extend([
-                "Sit upright and lean slightly forward.",
-                "Practise pursed-lip breathing: inhale slowly, exhale through "
-                "pursed lips for twice as long.",
-                "Avoid exertion — stay still and conserve oxygen.",
-            ])
+            guidance.extend(
+                [
+                    "Sit upright and lean slightly forward.",
+                    "Practise pursed-lip breathing: inhale slowly, exhale through "
+                    "pursed lips for twice as long.",
+                    "Avoid exertion — stay still and conserve oxygen.",
+                ]
+            )
 
         if hr is not None:
             if hr < 50:

@@ -15,6 +15,7 @@ Only non-identifiable cohort summary stats are saved in data/mimic/extracted/.
 Usage:
     python data/mimic/extract_cohort.py --config configs/mimic_extraction.yaml
 """
+
 import argparse
 import json
 import os
@@ -48,24 +49,28 @@ def check_mimic_available(mimic_dir: str, cfg: dict) -> bool:
 
 
 def load_target_patients(mimic_dir: str, cfg: dict) -> pd.DataFrame:
-    codes = (cfg["inclusion_criteria"]["icd10_codes"]["hypertension"] +
-             cfg["inclusion_criteria"]["icd10_codes"]["diabetes_t2"])
-    diag = pd.read_csv(f"{mimic_dir}/hosp/diagnoses_icd.csv.gz",
-                        usecols=["subject_id", "icd_code", "icd_version"])
+    codes = (
+        cfg["inclusion_criteria"]["icd10_codes"]["hypertension"]
+        + cfg["inclusion_criteria"]["icd10_codes"]["diabetes_t2"]
+    )
+    diag = pd.read_csv(
+        f"{mimic_dir}/hosp/diagnoses_icd.csv.gz",
+        usecols=["subject_id", "icd_code", "icd_version"],
+    )
     diag = diag[diag["icd_version"] == 10]
-    matched = diag[diag["icd_code"].apply(
-        lambda c: any(str(c).startswith(code) for code in codes)
-    )]["subject_id"].unique()
+    matched = diag[
+        diag["icd_code"].apply(lambda c: any(str(c).startswith(code) for code in codes))
+    ]["subject_id"].unique()
     print(f"  Patients with target ICD codes: {len(matched):,}")
     return matched
 
 
 def load_icu_stays(mimic_dir: str, subject_ids, min_hours: int) -> pd.DataFrame:
-    stays = pd.read_csv(f"{mimic_dir}/icu/icustays.csv.gz",
-                         parse_dates=["intime", "outtime"])
+    stays = pd.read_csv(
+        f"{mimic_dir}/icu/icustays.csv.gz", parse_dates=["intime", "outtime"]
+    )
     stays = stays[stays["subject_id"].isin(subject_ids)]
-    stays["los_hours"] = (
-        (stays["outtime"] - stays["intime"]).dt.total_seconds() / 3600)
+    stays["los_hours"] = (stays["outtime"] - stays["intime"]).dt.total_seconds() / 3600
     return stays[stays["los_hours"] >= min_hours].reset_index(drop=True)
 
 
@@ -76,13 +81,13 @@ def extract_vitals(mimic_dir: str, stay_ids: list, itemids: dict) -> pd.DataFram
         f"{mimic_dir}/icu/chartevents.csv.gz",
         usecols=["stay_id", "itemid", "charttime", "valuenum"],
         parse_dates=["charttime"],
-        chunksize=500_000)
+        chunksize=500_000,
+    )
 
     id_to_name = {i: k for k, ids in itemids.items() for i in ids}
     frames = []
     for chunk in chunks:
-        sub = chunk[chunk["stay_id"].isin(stay_ids) &
-                     chunk["itemid"].isin(all_ids)]
+        sub = chunk[chunk["stay_id"].isin(stay_ids) & chunk["itemid"].isin(all_ids)]
         if len(sub):
             sub = sub.copy()
             sub["vital_name"] = sub["itemid"].map(id_to_name)
@@ -97,10 +102,12 @@ def extract_vitals(mimic_dir: str, stay_ids: list, itemids: dict) -> pd.DataFram
     for sid, grp in df.groupby("stay_id"):
         try:
             pivot = grp.pivot_table(
-                index="charttime", columns="vital_name",
-                values="valuenum", aggfunc="mean")
-            pivot = pivot.resample("5T").mean().interpolate(
-                method="linear", limit=6)
+                index="charttime",
+                columns="vital_name",
+                values="valuenum",
+                aggfunc="mean",
+            )
+            pivot = pivot.resample("5T").mean().interpolate(method="linear", limit=6)
             pivot["stay_id"] = sid
             result_frames.append(pivot)
         except Exception:
@@ -113,15 +120,17 @@ def load_ground_truth(mimic_dir: str, subject_ids) -> pd.DataFrame:
     # Hypertensive urgency
     diag = pd.read_csv(f"{mimic_dir}/hosp/diagnoses_icd.csv.gz")
     hyp_codes = ["I16", "I16.0", "I16.1"]
-    hyp_pts = diag[diag["icd_code"].apply(
-        lambda c: any(str(c).startswith(x) for x in hyp_codes)) &
-        diag["subject_id"].isin(subject_ids)]["subject_id"].unique()
+    hyp_pts = diag[
+        diag["icd_code"].apply(lambda c: any(str(c).startswith(x) for x in hyp_codes))
+        & diag["subject_id"].isin(subject_ids)
+    ]["subject_id"].unique()
     for sid in hyp_pts:
         events.append({"subject_id": int(sid), "event_type": "hypertensive_urgency"})
     # Hypoglycemia
     hypo_codes = ["E11.641", "E11.649"]
-    hypo_pts = diag[diag["icd_code"].isin(hypo_codes) &
-                      diag["subject_id"].isin(subject_ids)]["subject_id"].unique()
+    hypo_pts = diag[
+        diag["icd_code"].isin(hypo_codes) & diag["subject_id"].isin(subject_ids)
+    ]["subject_id"].unique()
     for sid in hypo_pts:
         events.append({"subject_id": int(sid), "event_type": "hypoglycemia"})
     return pd.DataFrame(events)
@@ -129,9 +138,9 @@ def load_ground_truth(mimic_dir: str, subject_ids) -> pd.DataFrame:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config",    default="configs/mimic_extraction.yaml")
+    parser.add_argument("--config", default="configs/mimic_extraction.yaml")
     parser.add_argument("--mimic_dir", default="data/mimic/raw")
-    parser.add_argument("--output",    default="data/mimic/extracted")
+    parser.add_argument("--output", default="data/mimic/extracted")
     args = parser.parse_args()
 
     with open(args.config) as f:
@@ -150,14 +159,13 @@ def main():
 
     print("Step 2: Filtering ICU stays…")
     stays = load_icu_stays(
-        args.mimic_dir, subject_ids,
-        cfg["inclusion_criteria"]["icu_stay_hours_min"])
+        args.mimic_dir, subject_ids, cfg["inclusion_criteria"]["icu_stay_hours_min"]
+    )
     stays = stays.head(cfg["output"]["max_patients"])
     print(f"  Retained: {len(stays):,} stays")
 
     print("Step 3: Extracting vital signs (may take several minutes)…")
-    vitals = extract_vitals(args.mimic_dir, stays["stay_id"].tolist(),
-                             cfg["itemids"])
+    vitals = extract_vitals(args.mimic_dir, stays["stay_id"].tolist(), cfg["itemids"])
     vitals.to_csv(f"{args.output}/vitals_mimic.csv", index=False)
     print(f"  Saved {len(vitals):,} readings → {args.output}/vitals_mimic.csv")
 
@@ -169,8 +177,9 @@ def main():
         "n_stays": len(stays),
         "n_vital_readings": len(vitals),
         "n_escalation_events": len(events),
-        "event_breakdown": events["event_type"].value_counts().to_dict()
-            if len(events) else {},
+        "event_breakdown": (
+            events["event_type"].value_counts().to_dict() if len(events) else {}
+        ),
     }
     with open(f"{args.output}/cohort_summary.json", "w") as f:
         json.dump(summary, f, indent=2)

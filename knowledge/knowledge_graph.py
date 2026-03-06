@@ -78,6 +78,7 @@ class KnowledgeGraph:
     def __init__(self, config: dict | None = None) -> None:
         if config is None:
             import yaml
+
             with open("configs/knowledge_graph.yaml") as f:
                 config = yaml.safe_load(f)
         self.cfg = config
@@ -105,11 +106,11 @@ class KnowledgeGraph:
             self.G.add_edge(
                 t["drug"],
                 t["food"],
-                interaction = t["interaction"],
-                severity    = t["severity"],
-                action      = t["action"],
-                guideline   = t.get("guideline", ""),
-                edge_type   = "drug_food",
+                interaction=t["interaction"],
+                severity=t["severity"],
+                action=t["action"],
+                guideline=t.get("guideline", ""),
+                edge_type="drug_food",
             )
 
     def _load_contraindications(self) -> None:
@@ -120,12 +121,13 @@ class KnowledgeGraph:
             src = t.get("drug") or t.get("condition", "unknown")
             dst = t.get("condition") or t.get("food", "unknown")
             self.G.add_edge(
-                src, dst,
-                interaction = t.get("contraindication", ""),
-                severity    = t["severity"],
-                action      = t.get("action", ""),
-                guideline   = t.get("guideline", ""),
-                edge_type   = "contraindication",
+                src,
+                dst,
+                interaction=t.get("contraindication", ""),
+                severity=t["severity"],
+                action=t.get("action", ""),
+                guideline=t.get("guideline", ""),
+                edge_type="contraindication",
             )
 
     def _load_nutrients(self) -> None:
@@ -137,11 +139,11 @@ class KnowledgeGraph:
             self.G.add_edge(
                 src,
                 t["nutrient"],
-                interaction = t.get("deficiency_risk", ""),
-                severity    = "moderate",
-                action      = f"supplement_{t['nutrient']}",
-                guideline   = "",
-                edge_type   = "nutrient_deficiency",
+                interaction=t.get("deficiency_risk", ""),
+                severity="moderate",
+                action=f"supplement_{t['nutrient']}",
+                guideline="",
+                edge_type="nutrient_deficiency",
             )
 
     # ── Query API ─────────────────────────────────────────────────────────────
@@ -167,19 +169,19 @@ class KnowledgeGraph:
         results: list[dict[str, Any]] = []
         for _, target, data in self.G.out_edges(drug, data=True):
             if data.get("edge_type") == "drug_food":
-                results.append({
-                    "drug":        drug,
-                    "food":        target,
-                    "interaction": data["interaction"],
-                    "severity":    data["severity"],
-                    "action":      data["action"],
-                    "guideline":   data.get("guideline", ""),
-                })
+                results.append(
+                    {
+                        "drug": drug,
+                        "food": target,
+                        "interaction": data["interaction"],
+                        "severity": data["severity"],
+                        "action": data["action"],
+                        "guideline": data.get("guideline", ""),
+                    }
+                )
         return results
 
-    def get_condition_contraindications(
-        self, condition: str
-    ) -> list[dict[str, Any]]:
+    def get_condition_contraindications(self, condition: str) -> list[dict[str, Any]]:
         """Return drugs contraindicated for *condition*.
 
         Traverses incoming ``contraindication`` edges to the condition node.
@@ -199,13 +201,15 @@ class KnowledgeGraph:
         results: list[dict[str, Any]] = []
         for src, _, data in self.G.in_edges(condition, data=True):
             if data.get("edge_type") == "contraindication":
-                results.append({
-                    "drug":      src,
-                    "condition": condition,
-                    "severity":  data["severity"],
-                    "action":    data.get("action", ""),
-                    "guideline": data.get("guideline", ""),
-                })
+                results.append(
+                    {
+                        "drug": src,
+                        "condition": condition,
+                        "severity": data["severity"],
+                        "action": data.get("action", ""),
+                        "guideline": data.get("guideline", ""),
+                    }
+                )
         return results
 
     def check_plan_conflicts(
@@ -258,15 +262,17 @@ class KnowledgeGraph:
                 # edge_data is a dict of {edge_key: attr_dict} for MultiDiGraph
                 for _key, attrs in edge_data.items():
                     if attrs.get("edge_type") != "drug_food":
-                        continue   # skip contraindication / nutrient edges
-                    conflicts.append({
-                        "drug":        drug,
-                        "food":        food,
-                        "interaction": attrs.get("interaction", ""),
-                        "severity":    attrs.get("severity", "low"),
-                        "action":      attrs.get("action", "monitor"),
-                        "guideline":   attrs.get("guideline", ""),
-                    })
+                        continue  # skip contraindication / nutrient edges
+                    conflicts.append(
+                        {
+                            "drug": drug,
+                            "food": food,
+                            "interaction": attrs.get("interaction", ""),
+                            "severity": attrs.get("severity", "low"),
+                            "action": attrs.get("action", "monitor"),
+                            "guideline": attrs.get("guideline", ""),
+                        }
+                    )
 
         return conflicts
 
@@ -292,6 +298,5 @@ class KnowledgeGraph:
         if edge_data is None:
             return False
         return any(
-            attrs.get("edge_type") == "drug_food"
-            for attrs in edge_data.values()
+            attrs.get("edge_type") == "drug_food" for attrs in edge_data.values()
         )

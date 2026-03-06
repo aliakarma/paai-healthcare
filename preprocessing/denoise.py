@@ -1,10 +1,12 @@
 """Denoising filters for physiological signals."""
+
 import numpy as np
 
 
 def median_filter(signal: np.ndarray, window: int = 5) -> np.ndarray:
     """Apply median filter to remove spike artefacts."""
     from scipy.signal import medfilt
+
     return medfilt(signal, kernel_size=window).astype(np.float32)
 
 

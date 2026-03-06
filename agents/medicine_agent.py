@@ -48,6 +48,7 @@ logger = logging.getLogger(__name__)
 # Domain-specific data structures
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class DrugConflict:
     """Represents a single drug-food or drug-drug interaction finding.
@@ -87,6 +88,7 @@ class RenalFlag:
 # ──────────────────────────────────────────────────────────────────────────────
 # MedicineAgent
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class MedicineAgent(BaseAgent):
     """BDI Medicine Agent — manages medication timing, safety, and adherence.
@@ -141,13 +143,13 @@ class MedicineAgent(BaseAgent):
         adherence_threshold: float = 0.75,
     ) -> None:
         super().__init__(
-            agent_id        = "medicine_agent",
-            policy_registry = policy_registry,
-            knowledge_graph = knowledge_graph,
-            audit_log       = audit_log,
+            agent_id="medicine_agent",
+            policy_registry=policy_registry,
+            knowledge_graph=knowledge_graph,
+            audit_log=audit_log,
         )
-        self.drug_checker         = drug_checker
-        self.adherence_threshold  = adherence_threshold
+        self.drug_checker = drug_checker
+        self.adherence_threshold = adherence_threshold
 
     # ── BDI cycle ─────────────────────────────────────────────────────────────
 
@@ -170,19 +172,21 @@ class MedicineAgent(BaseAgent):
         Args:
             state: Current patient state assembled by the orchestrator.
         """
-        self.beliefs.update({
-            "patient_id":    state.patient_id,
-            "vitals":        state.vitals,
-            "conditions":    state.conditions,
-            "allergies":     state.allergies,
-            "prescriptions": state.prescriptions,
-            "labs":          state.labs,
-            "adherence_med": state.adherence_med,
-            "hour_of_day":   state.hour_of_day,
-            "actions_tried": state.actions_tried,
-            # Proposed foods may be injected by orchestrator via state.extra
-            "proposed_foods": state.extra.get("proposed_foods", []),
-        })
+        self.beliefs.update(
+            {
+                "patient_id": state.patient_id,
+                "vitals": state.vitals,
+                "conditions": state.conditions,
+                "allergies": state.allergies,
+                "prescriptions": state.prescriptions,
+                "labs": state.labs,
+                "adherence_med": state.adherence_med,
+                "hour_of_day": state.hour_of_day,
+                "actions_tried": state.actions_tried,
+                # Proposed foods may be injected by orchestrator via state.extra
+                "proposed_foods": state.extra.get("proposed_foods", []),
+            }
+        )
         self._log.debug(
             "Perceived: patient=%s drugs=%d adherence=%.2f",
             state.patient_id,
@@ -210,56 +214,61 @@ class MedicineAgent(BaseAgent):
             ``"drug"``, and optional ``"reason"``.
         """
         intentions: list[dict] = []
-        prescriptions: list[MedicationEntry] = self.beliefs.get(
-            "prescriptions", [])
-        labs                = self.beliefs.get("labs")
-        adherence           = self.beliefs.get("adherence_med", 0.75)
-        proposed_foods      = self.beliefs.get("proposed_foods", [])
-        conditions          = self.beliefs.get("conditions", [])
-        egfr: float | None  = labs.egfr if labs else None
+        prescriptions: list[MedicationEntry] = self.beliefs.get("prescriptions", [])
+        labs = self.beliefs.get("labs")
+        adherence = self.beliefs.get("adherence_med", 0.75)
+        proposed_foods = self.beliefs.get("proposed_foods", [])
+        conditions = self.beliefs.get("conditions", [])
+        egfr: float | None = labs.egfr if labs else None
 
         all_drug_names = [m.drug for m in prescriptions]
 
         for med in prescriptions:
             # ── 1. Drug-food interaction check ───────────────────────────────
             conflicts = self._check_interactions(med.drug, proposed_foods)
-            severe = [c for c in conflicts
-                       if c.severity in ("high", "absolute")]
+            severe = [c for c in conflicts if c.severity in ("high", "absolute")]
             if severe:
-                intentions.append({
-                    "type":    ActionType.ESCALATE_DRUG_SAFETY.value,
-                    "urgency": Urgency.IMMEDIATE.value,
-                    "drug":    med.drug,
-                    "reason":  severe[0].description,
-                    "conflicts": [vars(c) for c in severe],
-                })
+                intentions.append(
+                    {
+                        "type": ActionType.ESCALATE_DRUG_SAFETY.value,
+                        "urgency": Urgency.IMMEDIATE.value,
+                        "drug": med.drug,
+                        "reason": severe[0].description,
+                        "conflicts": [vars(c) for c in severe],
+                    }
+                )
                 continue  # Skip further checks for this drug
 
             # ── 2. Renal / hepatic safety ────────────────────────────────────
             if self.drug_checker is not None:
-                flag = self._check_renal_safety(med.drug, conditions,
-                                                 all_drug_names, egfr)
+                flag = self._check_renal_safety(
+                    med.drug, conditions, all_drug_names, egfr
+                )
                 if not flag.safe:
-                    intentions.append({
-                        "type":      ActionType.ESCALATE_DRUG_SAFETY.value,
-                        "urgency":   Urgency.HIGH.value,
-                        "drug":      med.drug,
-                        "reason":    flag.reason,
-                        "threshold": flag.threshold,
-                    })
+                    intentions.append(
+                        {
+                            "type": ActionType.ESCALATE_DRUG_SAFETY.value,
+                            "urgency": Urgency.HIGH.value,
+                            "drug": med.drug,
+                            "reason": flag.reason,
+                            "threshold": flag.threshold,
+                        }
+                    )
                     continue
 
             # ── 3. Adherence reminder ─────────────────────────────────────────
             if adherence < self.adherence_threshold:
                 window = self.registry.get_timing_window(med.drug)
-                intentions.append({
-                    "type":    ActionType.MEDICATION_REMINDER.value,
-                    "urgency": Urgency.ROUTINE.value,
-                    "drug":    med.drug,
-                    "window":  window,
-                    "dose_mg": med.dose_mg,
-                    "timing":  med.timing,
-                })
+                intentions.append(
+                    {
+                        "type": ActionType.MEDICATION_REMINDER.value,
+                        "urgency": Urgency.ROUTINE.value,
+                        "drug": med.drug,
+                        "window": window,
+                        "dose_mg": med.dose_mg,
+                        "timing": med.timing,
+                    }
+                )
 
         self._log.debug("Deliberated %d intentions", len(intentions))
         return intentions
@@ -297,15 +306,15 @@ class MedicineAgent(BaseAgent):
             # ── Escalation ────────────────────────────────────────────────────
             if intent_type == ActionType.ESCALATE_DRUG_SAFETY.value:
                 action = self._make_action(
-                    action_type = ActionType.ESCALATE_DRUG_SAFETY,
-                    urgency     = urgency,
-                    payload     = {
-                        "drug":      intent["drug"],
-                        "reason":    intent.get("reason", ""),
+                    action_type=ActionType.ESCALATE_DRUG_SAFETY,
+                    urgency=urgency,
+                    payload={
+                        "drug": intent["drug"],
+                        "reason": intent.get("reason", ""),
                         "conflicts": intent.get("conflicts", []),
                         "threshold": intent.get("threshold"),
                     },
-                    rationale = (
+                    rationale=(
                         f"Drug safety concern for {intent['drug']}: "
                         f"{intent.get('reason', 'see conflicts')}"
                     ),
@@ -316,21 +325,23 @@ class MedicineAgent(BaseAgent):
             # ── Adherence reminder ────────────────────────────────────────────
             elif intent_type == ActionType.MEDICATION_REMINDER.value:
                 window = intent.get("window") or {}
-                preferred = window.get("preferred_time", intent.get("timing", "as prescribed"))
+                preferred = window.get(
+                    "preferred_time", intent.get("timing", "as prescribed")
+                )
                 action = self._make_action(
-                    action_type = ActionType.MEDICATION_REMINDER,
-                    urgency     = Urgency.ROUTINE,
-                    payload     = {
-                        "drug":        intent["drug"],
-                        "dose_mg":     intent.get("dose_mg"),
-                        "timing":      intent.get("timing"),
-                        "message":     (
+                    action_type=ActionType.MEDICATION_REMINDER,
+                    urgency=Urgency.ROUTINE,
+                    payload={
+                        "drug": intent["drug"],
+                        "dose_mg": intent.get("dose_mg"),
+                        "timing": intent.get("timing"),
+                        "message": (
                             f"Reminder: take {intent['drug']} "
                             f"({intent.get('dose_mg')} mg) — "
                             f"preferred time: {preferred}."
                         ),
                     },
-                    rationale = (
+                    rationale=(
                         f"Adherence below threshold "
                         f"({self.beliefs.get('adherence_med', 0):.0%}); "
                         f"issuing reminder for {intent['drug']}."
@@ -342,14 +353,14 @@ class MedicineAgent(BaseAgent):
             # ── Reschedule ────────────────────────────────────────────────────
             elif intent_type == ActionType.MEDICATION_SCHEDULE.value:
                 action = self._make_action(
-                    action_type = ActionType.MEDICATION_SCHEDULE,
-                    urgency     = Urgency.ROUTINE,
-                    payload     = {
-                        "drug":        intent["drug"],
-                        "delta_min":   intent.get("delta_min", 0),
-                        "new_time":    intent.get("new_time"),
+                    action_type=ActionType.MEDICATION_SCHEDULE,
+                    urgency=Urgency.ROUTINE,
+                    payload={
+                        "drug": intent["drug"],
+                        "delta_min": intent.get("delta_min", 0),
+                        "new_time": intent.get("new_time"),
                     },
-                    rationale = (
+                    rationale=(
                         f"Rescheduling {intent['drug']} by "
                         f"{intent.get('delta_min', 0)} min to stay within "
                         f"prescriber window."
@@ -360,11 +371,10 @@ class MedicineAgent(BaseAgent):
 
         self._persist_actions(actions)
         return AgentResult(
-            agent_id = self.agent_id,
-            actions  = actions,
-            metadata = {
-                "prescriptions_reviewed": len(
-                    self.beliefs.get("prescriptions", [])),
+            agent_id=self.agent_id,
+            actions=actions,
+            metadata={
+                "prescriptions_reviewed": len(self.beliefs.get("prescriptions", [])),
                 "adherence_med": self.beliefs.get("adherence_med"),
             },
         )
@@ -389,10 +399,10 @@ class MedicineAgent(BaseAgent):
         self.update_beliefs(task)
         result = self.act(self.deliberate())
         return {
-            "agent":   self.agent_id,
+            "agent": self.agent_id,
             "actions": [
-                a.payload | {"action_type": a.action_type.value,
-                              "urgency":     a.urgency.value}
+                a.payload
+                | {"action_type": a.action_type.value, "urgency": a.urgency.value}
                 for a in result.actions
             ],
             "metadata": result.metadata,
@@ -418,14 +428,16 @@ class MedicineAgent(BaseAgent):
             return False
 
         # Enforce dose ceiling from policy registry
-        drug    = action.payload.get("drug")
+        drug = action.payload.get("drug")
         dose_mg = action.payload.get("dose_mg")
         if drug and dose_mg is not None:
             ceiling = self.registry.get_dose_ceiling(drug)
             if ceiling is not None and float(dose_mg) > ceiling:
                 self._log.warning(
                     "BLOCKED — dose %.1f mg exceeds ceiling %.1f mg for %s",
-                    dose_mg, ceiling, drug,
+                    dose_mg,
+                    ceiling,
+                    drug,
                 )
                 return False
         return True
@@ -456,13 +468,15 @@ class MedicineAgent(BaseAgent):
         for entry in raw:
             # Only flag interactions relevant to today's proposed foods
             if entry.get("food") in proposed_foods:
-                conflicts.append(DrugConflict(
-                    drug         = drug,
-                    interactant  = entry.get("food", entry.get("drug2", "")),
-                    severity     = entry.get("severity", "low"),
-                    description  = entry.get("description", ""),
-                    action       = entry.get("action", "monitor"),
-                ))
+                conflicts.append(
+                    DrugConflict(
+                        drug=drug,
+                        interactant=entry.get("food", entry.get("drug2", "")),
+                        severity=entry.get("severity", "low"),
+                        description=entry.get("description", ""),
+                        action=entry.get("action", "monitor"),
+                    )
+                )
         return conflicts
 
     def _check_renal_safety(
@@ -485,14 +499,13 @@ class MedicineAgent(BaseAgent):
         """
         try:
             safe, reason = self.drug_checker.safe_to_prescribe(
-                drug, conditions, all_drugs, egfr)
+                drug, conditions, all_drugs, egfr
+            )
             threshold: float | None = None
             # Extract threshold from reason string if present
             if egfr is not None and not safe:
                 threshold = egfr
-            return RenalFlag(drug=drug, safe=safe, reason=reason,
-                              threshold=threshold)
+            return RenalFlag(drug=drug, safe=safe, reason=reason, threshold=threshold)
         except Exception as exc:
             self._log.warning("drug_checker failed for %s: %s", drug, exc)
-            return RenalFlag(drug=drug, safe=True,
-                              reason="checker_unavailable")
+            return RenalFlag(drug=drug, safe=True, reason="checker_unavailable")

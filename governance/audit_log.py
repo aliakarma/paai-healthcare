@@ -7,6 +7,7 @@ Integrity, Privacy) governance layer described in Section 3.1.
 Every entry is cryptographically linked to its predecessor.
 Any tampering is detectable by verify_integrity().
 """
+
 import hashlib
 import json
 import time
@@ -18,8 +19,11 @@ from typing import Optional
 class AuditLog:
     """Append-only hash-chained audit log with optional AES-256 field encryption."""
 
-    def __init__(self, log_path: str = "governance/audit.jsonl",
-                 encryption_key: Optional[bytes] = None):
+    def __init__(
+        self,
+        log_path: str = "governance/audit.jsonl",
+        encryption_key: Optional[bytes] = None,
+    ):
         self.log_path = Path(log_path)
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         self._last_hash = "GENESIS"
@@ -29,6 +33,7 @@ class AuditLog:
         if encryption_key:
             try:
                 from cryptography.fernet import Fernet
+
                 self._fernet = Fernet(encryption_key)
             except ImportError:
                 pass
@@ -42,8 +47,14 @@ class AuditLog:
                 self._last_hash = last["entry_hash"]
                 self._entry_count = len(lines)
 
-    def append(self, patient_id: str, agent_id: str, action_type: str,
-               action_detail: dict, outcome: Optional[dict] = None) -> str:
+    def append(
+        self,
+        patient_id: str,
+        agent_id: str,
+        action_type: str,
+        action_detail: dict,
+        outcome: Optional[dict] = None,
+    ) -> str:
         """Append an entry; returns this entry's SHA-256 hash."""
         pseudonym = hashlib.sha256(patient_id.encode()).hexdigest()[:12]
         detail_str = json.dumps(action_detail, sort_keys=True)
@@ -53,14 +64,14 @@ class AuditLog:
             detail_stored = detail_str
 
         entry = {
-            "seq":              self._entry_count,
-            "timestamp":        time.time(),
+            "seq": self._entry_count,
+            "timestamp": time.time(),
             "patient_pseudonym": pseudonym,
-            "agent_id":         agent_id,
-            "action_type":      action_type,
-            "action_detail":    detail_stored,
-            "outcome":          outcome or {},
-            "prev_hash":        self._last_hash,
+            "agent_id": agent_id,
+            "action_type": action_type,
+            "action_detail": detail_stored,
+            "outcome": outcome or {},
+            "prev_hash": self._last_hash,
         }
         content = json.dumps(entry, sort_keys=True).encode()
         entry_hash = hashlib.sha256(content).hexdigest()
@@ -86,7 +97,8 @@ class AuditLog:
                     return False
                 stored_hash = entry.pop("entry_hash")
                 recomputed = hashlib.sha256(
-                    json.dumps(entry, sort_keys=True).encode()).hexdigest()
+                    json.dumps(entry, sort_keys=True).encode()
+                ).hexdigest()
                 entry["entry_hash"] = stored_hash
                 if recomputed != stored_hash:
                     print(f"✗ Tampered entry detected at {i}")

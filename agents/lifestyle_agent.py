@@ -57,6 +57,7 @@ MAX_BEDTIME_SHIFT_MINUTES: int = 15
 # Domain-specific data structures
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class ChronotypeWindow:
     """Recommended bed/wake times for a patient chronotype.
@@ -68,15 +69,15 @@ class ChronotypeWindow:
     """
 
     chronotype: str
-    bedtime:    str
-    wake_time:  str
+    bedtime: str
+    wake_time: str
 
 
 # Canonical chronotype windows (evidence-based; Roenneberg 2012)
 _CHRONOTYPE_TABLE: dict[str, ChronotypeWindow] = {
-    "morning":      ChronotypeWindow("morning",      "21:30", "05:30"),
+    "morning": ChronotypeWindow("morning", "21:30", "05:30"),
     "intermediate": ChronotypeWindow("intermediate", "22:30", "06:30"),
-    "evening":      ChronotypeWindow("evening",      "23:30", "07:30"),
+    "evening": ChronotypeWindow("evening", "23:30", "07:30"),
 }
 _DEFAULT_WINDOW = _CHRONOTYPE_TABLE["intermediate"]
 
@@ -94,14 +95,15 @@ class LifestylePlan:
     """
 
     recommended_bedtime: str
-    recommended_wake:    str
-    sleep_debt_hours:    float
-    prompts:             list[dict[str, Any]] = field(default_factory=list)
+    recommended_wake: str
+    sleep_debt_hours: float
+    prompts: list[dict[str, Any]] = field(default_factory=list)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # LifestyleAgent
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class LifestyleAgent(BaseAgent):
     """BDI Sleep & Lifestyle Agent — chronotype scheduling and hygiene nudges.
@@ -149,10 +151,10 @@ class LifestyleAgent(BaseAgent):
         walk_cooldown_minutes: int = WALK_COOLDOWN_MINUTES,
     ) -> None:
         super().__init__(
-            agent_id        = "lifestyle_agent",
-            policy_registry = policy_registry,
-            knowledge_graph = knowledge_graph,
-            audit_log       = audit_log,
+            agent_id="lifestyle_agent",
+            policy_registry=policy_registry,
+            knowledge_graph=knowledge_graph,
+            audit_log=audit_log,
         )
         self._walk_cooldown_minutes = walk_cooldown_minutes
         # Tracks minutes since last walk prompt per patient (in-memory state)
@@ -180,21 +182,23 @@ class LifestyleAgent(BaseAgent):
             state: Current patient state from the orchestrator.
         """
         pid = state.patient_id
-        self.beliefs.update({
-            "patient_id":             pid,
-            "conditions":             state.conditions,
-            "sleep_actual_hours":     state.sleep_actual_hours,
-            "sleep_target_hours":     state.sleep_target_hours,
-            "chronotype":             state.chronotype,
-            "steps_today":            state.steps_today,
-            "hour_of_day":            state.hour_of_day,
-            "caffeine_intake_mg":     state.caffeine_intake_mg,
-            "glucose":                (state.vitals.glucose_mgdl or 100.0),
-            "nap_taken_today":        state.extra.get("nap_taken_today", False),
-            "minutes_since_last_walk_prompt": (
-                self._last_walk_prompt_min.get(pid, 9999)
-            ),
-        })
+        self.beliefs.update(
+            {
+                "patient_id": pid,
+                "conditions": state.conditions,
+                "sleep_actual_hours": state.sleep_actual_hours,
+                "sleep_target_hours": state.sleep_target_hours,
+                "chronotype": state.chronotype,
+                "steps_today": state.steps_today,
+                "hour_of_day": state.hour_of_day,
+                "caffeine_intake_mg": state.caffeine_intake_mg,
+                "glucose": (state.vitals.glucose_mgdl or 100.0),
+                "nap_taken_today": state.extra.get("nap_taken_today", False),
+                "minutes_since_last_walk_prompt": (
+                    self._last_walk_prompt_min.get(pid, 9999)
+                ),
+            }
+        )
         self._log.debug(
             "Perceived: patient=%s sleep=%.1f/%.1f h steps=%d hour=%d",
             pid,
@@ -221,38 +225,46 @@ class LifestyleAgent(BaseAgent):
         # ── 1. Sleep ──────────────────────────────────────────────────────────
         debt = self._sleep_debt_hours()
         if debt >= SLEEP_DEBT_THRESHOLD_HOURS:
-            intentions.append({
-                "type":    ActionType.SLEEP_ADJUSTMENT.value,   # was SLEEP_ADVANCE (Issue 2)
-                "urgency": Urgency.GENTLE.value,
-                "debt_h":  debt,
-            })
+            intentions.append(
+                {
+                    "type": ActionType.SLEEP_ADJUSTMENT.value,  # was SLEEP_ADVANCE (Issue 2)
+                    "urgency": Urgency.GENTLE.value,
+                    "debt_h": debt,
+                }
+            )
         if debt >= 1.5 and not self.beliefs.get("nap_taken_today", False):
-            intentions.append({
-                "type":    ActionType.NAP_RECOMMENDATION.value,
-                "urgency": Urgency.GENTLE.value,
-                "debt_h":  debt,
-            })
+            intentions.append(
+                {
+                    "type": ActionType.NAP_RECOMMENDATION.value,
+                    "urgency": Urgency.GENTLE.value,
+                    "debt_h": debt,
+                }
+            )
 
         # ── 2. Caffeine cutoff ────────────────────────────────────────────────
-        hour    = int(self.beliefs.get("hour_of_day", 12))
-        cutoff  = self._caffeine_cutoff_hour()
+        hour = int(self.beliefs.get("hour_of_day", 12))
+        cutoff = self._caffeine_cutoff_hour()
         caffeine = float(self.beliefs.get("caffeine_intake_mg", 0.0))
         if hour >= cutoff and caffeine > 0:
-            intentions.append({
-                "type":    ActionType.CAFFEINE_HYGIENE.value,
-                "urgency": Urgency.GENTLE.value,
-                "hour":    hour,
-                "cutoff":  cutoff,
-            })
+            intentions.append(
+                {
+                    "type": ActionType.CAFFEINE_HYGIENE.value,
+                    "urgency": Urgency.GENTLE.value,
+                    "hour": hour,
+                    "cutoff": cutoff,
+                }
+            )
 
         # ── 3. Activity ───────────────────────────────────────────────────────
         if self._should_prompt_walk():
-            intentions.append({
-                "type":    ActionType.WALK_PROMPT.value,
-                "urgency": Urgency.GENTLE.value,
-                "steps":   self.beliefs.get("steps_today", 0),
-                "glucose": self.beliefs.get("glucose", 100.0),
-            })
+            intentions.append(
+                {
+                    "type": ActionType.WALK_PROMPT.value,
+                    "urgency": Urgency.GENTLE.value,
+                    "steps": self.beliefs.get("steps_today", 0),
+                    "glucose": self.beliefs.get("glucose", 100.0),
+                }
+            )
 
         self._log.debug("Deliberated %d intentions", len(intentions))
         return intentions
@@ -271,11 +283,11 @@ class LifestyleAgent(BaseAgent):
             summary in ``metadata``.
         """
         window = self._chronotype_window()
-        debt   = self._sleep_debt_hours()
-        plan   = LifestylePlan(
-            recommended_bedtime = window.bedtime,
-            recommended_wake    = window.wake_time,
-            sleep_debt_hours    = debt,
+        debt = self._sleep_debt_hours()
+        plan = LifestylePlan(
+            recommended_bedtime=window.bedtime,
+            recommended_wake=window.wake_time,
+            sleep_debt_hours=debt,
         )
 
         actions: list[AgentAction] = []
@@ -284,22 +296,27 @@ class LifestyleAgent(BaseAgent):
             intent_type = intent.get("type", "")
 
             # ── Sleep advance ─────────────────────────────────────────────────
-            if intent_type == ActionType.SLEEP_ADJUSTMENT.value:   # was SLEEP_ADVANCE (Issue 2)
+            if (
+                intent_type == ActionType.SLEEP_ADJUSTMENT.value
+            ):  # was SLEEP_ADVANCE (Issue 2)
                 adjusted_bedtime = self._advance_bedtime(
-                    window.bedtime, MAX_BEDTIME_SHIFT_MINUTES)
+                    window.bedtime, MAX_BEDTIME_SHIFT_MINUTES
+                )
                 plan.recommended_bedtime = adjusted_bedtime
-                plan.prompts.append({
-                    "type":             "sleep_adjustment",
-                    "adjusted_bedtime": adjusted_bedtime,
-                    "shift_minutes":    MAX_BEDTIME_SHIFT_MINUTES,
-                })
+                plan.prompts.append(
+                    {
+                        "type": "sleep_adjustment",
+                        "adjusted_bedtime": adjusted_bedtime,
+                        "shift_minutes": MAX_BEDTIME_SHIFT_MINUTES,
+                    }
+                )
                 action = self._make_action(
-                    action_type = ActionType.SLEEP_ADJUSTMENT,     # was SLEEP_ADVANCE (Issue 2)
-                    urgency     = Urgency.GENTLE,
-                    payload     = {
-                        "sleep_debt_hours":   round(debt, 2),
-                        "adjusted_bedtime":   adjusted_bedtime,
-                        "shift_minutes":      MAX_BEDTIME_SHIFT_MINUTES,
+                    action_type=ActionType.SLEEP_ADJUSTMENT,  # was SLEEP_ADVANCE (Issue 2)
+                    urgency=Urgency.GENTLE,
+                    payload={
+                        "sleep_debt_hours": round(debt, 2),
+                        "adjusted_bedtime": adjusted_bedtime,
+                        "shift_minutes": MAX_BEDTIME_SHIFT_MINUTES,
                         "message": (
                             f"You have {debt:.1f} h of sleep debt.  "
                             f"Try moving bedtime "
@@ -307,7 +324,7 @@ class LifestyleAgent(BaseAgent):
                             f"to {adjusted_bedtime}."
                         ),
                     },
-                    rationale = (
+                    rationale=(
                         f"Sleep debt {debt:.2f} h ≥ threshold "
                         f"{SLEEP_DEBT_THRESHOLD_HOURS} h; light bedtime advance."
                     ),
@@ -318,9 +335,9 @@ class LifestyleAgent(BaseAgent):
             elif intent_type == ActionType.NAP_RECOMMENDATION.value:
                 plan.prompts.append({"type": "nap_recommendation"})
                 action = self._make_action(
-                    action_type = ActionType.NAP_RECOMMENDATION,
-                    urgency     = Urgency.GENTLE,
-                    payload     = {
+                    action_type=ActionType.NAP_RECOMMENDATION,
+                    urgency=Urgency.GENTLE,
+                    payload={
                         "sleep_debt_hours": round(debt, 2),
                         "message": (
                             f"Your sleep debt is {debt:.1f} h.  "
@@ -330,29 +347,28 @@ class LifestyleAgent(BaseAgent):
                         "max_nap_minutes": 20,
                         "nap_before_hour": 15,
                     },
-                    rationale = (
-                        f"Sleep debt {debt:.2f} h ≥ 1.5 h and no nap today."
-                    ),
+                    rationale=(f"Sleep debt {debt:.2f} h ≥ 1.5 h and no nap today."),
                 )
                 actions.append(action)
 
             # ── Caffeine hygiene ──────────────────────────────────────────────
             elif intent_type == ActionType.CAFFEINE_HYGIENE.value:
-                cutoff  = intent.get("cutoff", 14)
+                cutoff = intent.get("cutoff", 14)
                 plan.prompts.append({"type": "caffeine_hygiene", "cutoff": cutoff})
                 action = self._make_action(
-                    action_type = ActionType.CAFFEINE_HYGIENE,
-                    urgency     = Urgency.GENTLE,
-                    payload     = {
+                    action_type=ActionType.CAFFEINE_HYGIENE,
+                    urgency=Urgency.GENTLE,
+                    payload={
                         "caffeine_intake_mg": self.beliefs.get(
-                            "caffeine_intake_mg", 0.0),
+                            "caffeine_intake_mg", 0.0
+                        ),
                         "cutoff_hour": cutoff,
                         "message": (
                             f"Avoid caffeine after {cutoff:02d}:00 — "
                             "it can delay sleep onset by up to 40 minutes."
                         ),
                     },
-                    rationale = (
+                    rationale=(
                         f"Caffeine consumed at hour {intent.get('hour', 0)}, "
                         f"after the {cutoff}:00 cutoff."
                     ),
@@ -361,27 +377,28 @@ class LifestyleAgent(BaseAgent):
 
             # ── Walk prompt ───────────────────────────────────────────────────
             elif intent_type == ActionType.WALK_PROMPT.value:
-                steps   = intent.get("steps", 0)
+                steps = intent.get("steps", 0)
                 glucose = intent.get("glucose", 100.0)
-                reason  = (
+                reason = (
                     "post-prandial glucose elevated"
-                    if glucose > 160 else "low step count"
+                    if glucose > 160
+                    else "low step count"
                 )
                 plan.prompts.append({"type": "walk_prompt", "reason": reason})
                 action = self._make_action(
-                    action_type = ActionType.WALK_PROMPT,
-                    urgency     = Urgency.GENTLE,
-                    payload     = {
-                        "steps_today":    steps,
-                        "glucose_mgdl":   glucose,
-                        "duration_min":   15,
+                    action_type=ActionType.WALK_PROMPT,
+                    urgency=Urgency.GENTLE,
+                    payload={
+                        "steps_today": steps,
+                        "glucose_mgdl": glucose,
+                        "duration_min": 15,
                         "message": (
                             "A brisk 15-minute walk can lower blood glucose "
                             "and contribute to your daily step target.  "
                             "Even a short walk after meals helps."
                         ),
                     },
-                    rationale = (
+                    rationale=(
                         f"Walk prompted due to {reason} "
                         f"(steps={steps}, glucose={glucose:.0f} mg/dL)."
                     ),
@@ -393,14 +410,14 @@ class LifestyleAgent(BaseAgent):
 
         self._persist_actions(actions)
         return AgentResult(
-            agent_id = self.agent_id,
-            actions  = actions,
-            metadata = {
+            agent_id=self.agent_id,
+            actions=actions,
+            metadata={
                 "lifestyle_plan": {
                     "recommended_bedtime": plan.recommended_bedtime,
-                    "recommended_wake":    plan.recommended_wake,
-                    "sleep_debt_hours":    round(plan.sleep_debt_hours, 2),
-                    "prompts":             plan.prompts,
+                    "recommended_wake": plan.recommended_wake,
+                    "sleep_debt_hours": round(plan.sleep_debt_hours, 2),
+                    "prompts": plan.prompts,
                 },
             },
         )
@@ -424,10 +441,10 @@ class LifestyleAgent(BaseAgent):
         self.update_beliefs(task)
         result = self.act(self.deliberate())
         return {
-            "agent":   self.agent_id,
+            "agent": self.agent_id,
             "actions": [
-                a.payload | {"action_type": a.action_type.value,
-                              "urgency":     a.urgency.value}
+                a.payload
+                | {"action_type": a.action_type.value, "urgency": a.urgency.value}
                 for a in result.actions
             ],
             "metadata": result.metadata,
@@ -492,13 +509,12 @@ class LifestyleAgent(BaseAgent):
         Returns:
             ``True`` if a walk prompt is appropriate.
         """
-        steps   = int(self.beliefs.get("steps_today", 0))
+        steps = int(self.beliefs.get("steps_today", 0))
         glucose = float(self.beliefs.get("glucose", 100.0))
-        since   = float(self.beliefs.get(
-            "minutes_since_last_walk_prompt", 9999))
+        since = float(self.beliefs.get("minutes_since_last_walk_prompt", 9999))
 
         activity_trigger = (steps < 3000) or (glucose > 160 and steps < 5000)
-        cooldown_elapsed  = since >= self._walk_cooldown_minutes
+        cooldown_elapsed = since >= self._walk_cooldown_minutes
         return activity_trigger and cooldown_elapsed
 
     @staticmethod

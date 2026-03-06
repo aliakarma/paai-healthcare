@@ -4,6 +4,7 @@ policy_registry.py
 Loads prescriber rules, allergy exclusions, and escalation criteria.
 Exposes a constraint-checking interface used by the Constraint Filter.
 """
+
 import json
 from pathlib import Path
 
@@ -53,15 +54,15 @@ class PolicyRegistry:
         auto = self.escalation["automatic_escalation"]
         sbp = vitals.get("sbp", 0)
         glc = vitals.get("glucose_mgdl", 100)
-        hr  = vitals.get("heart_rate", 70)
+        hr = vitals.get("heart_rate", 70)
         spo2 = vitals.get("spo2", 98)
         return (
-            sbp >= auto.get("systolic_bp_mmhg_gte", 9999) or
-            glc <= auto.get("glucose_mgdl_lte", -1) or
-            glc >= auto.get("glucose_mgdl_gte", 9999) or
-            spo2 <= auto.get("spo2_pct_lte", -1) or
-            hr <= auto.get("heart_rate_bpm_lte", -1) or
-            hr >= auto.get("heart_rate_bpm_gte", 9999)
+            sbp >= auto.get("systolic_bp_mmhg_gte", 9999)
+            or glc <= auto.get("glucose_mgdl_lte", -1)
+            or glc >= auto.get("glucose_mgdl_gte", 9999)
+            or spo2 <= auto.get("spo2_pct_lte", -1)
+            or hr <= auto.get("heart_rate_bpm_lte", -1)
+            or hr >= auto.get("heart_rate_bpm_gte", 9999)
         )
 
     def should_watch(self, vitals: dict) -> bool:
@@ -71,8 +72,8 @@ class PolicyRegistry:
         glc = vitals.get("glucose_mgdl", 100)
         spo2 = vitals.get("spo2", 98)
         return (
-            sbp >= watch.get("systolic_bp_mmhg_gte", 9999) or
-            glc <= watch.get("glucose_mgdl_lte", -1) or
-            glc >= watch.get("glucose_mgdl_gte", 9999) or
-            spo2 <= watch.get("spo2_pct_lte", -1)
+            sbp >= watch.get("systolic_bp_mmhg_gte", 9999)
+            or glc <= watch.get("glucose_mgdl_lte", -1)
+            or glc >= watch.get("glucose_mgdl_gte", 9999)
+            or spo2 <= watch.get("spo2_pct_lte", -1)
         )

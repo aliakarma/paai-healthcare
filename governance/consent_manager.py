@@ -1,4 +1,5 @@
 """consent_manager.py — Tracks patient consent scopes per data channel."""
+
 import json
 from pathlib import Path
 
@@ -8,8 +9,13 @@ class ConsentManager:
     Per-patient consent scope registry.
     Consent is required before sending any alert to a clinician (HIPAA/GDPR).
     """
-    CHANNELS = ["clinician_alert", "cardiologist_share", "research_data",
-                 "family_notification"]
+
+    CHANNELS = [
+        "clinician_alert",
+        "cardiologist_share",
+        "research_data",
+        "family_notification",
+    ]
 
     def __init__(self, store_path: str = "governance/consent_store.json"):
         self.store_path = Path(store_path)

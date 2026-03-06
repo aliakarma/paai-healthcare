@@ -12,6 +12,7 @@ Usage:
 Hardware: CPU sufficient — 2M steps on 8 parallel envs takes ~3-6 hours.
 Monitor training: tensorboard --logdir rl/tensorboard/
 """
+
 import argparse
 import os
 import sys
@@ -24,46 +25,53 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 def load_patient_data(cohort_dir: str) -> list:
     import pandas as pd
-    static  = pd.read_csv(f"{cohort_dir}/patients_static.csv")
-    vitals  = pd.read_csv(f"{cohort_dir}/vitals_longitudinal.csv")
+
+    static = pd.read_csv(f"{cohort_dir}/patients_static.csv")
+    vitals = pd.read_csv(f"{cohort_dir}/vitals_longitudinal.csv")
     patients = []
     for _, row in static.iterrows():
         pid = int(row["patient_id"])
-        pv  = vitals[vitals["patient_id"] == pid].to_dict("records")
-        patients.append({
-            "patient_id": pid,
-            "demographics": row.to_dict(),
-            "vitals": pv,
-            "policies": {
-                "sodium_cap":          bool(row.get("hypertension", False)),
-                "caffeine_restriction": True,
-                "renal_adjustment":    bool(row.get("ckd", False)),
-            },
-        })
+        pv = vitals[vitals["patient_id"] == pid].to_dict("records")
+        patients.append(
+            {
+                "patient_id": pid,
+                "demographics": row.to_dict(),
+                "vitals": pv,
+                "policies": {
+                    "sodium_cap": bool(row.get("hypertension", False)),
+                    "caffeine_restriction": True,
+                    "renal_adjustment": bool(row.get("ckd", False)),
+                },
+            }
+        )
     return patients
 
 
 def make_env(patient_data_list, config, policy_registry, rank, seed=42):
     from stable_baselines3.common.utils import set_random_seed
+
     def _init():
         from envs.patient_env import PatientEnv
+
         pt = patient_data_list[rank % len(patient_data_list)]
         env = PatientEnv(pt, config, policy_registry)
         env.reset(seed=seed + rank)
         return env
+
     set_random_seed(seed)
     return _init
 
 
 def main():
     parser = argparse.ArgumentParser(description="Train AgHealth+ RL policy")
-    parser.add_argument("--config",         default="configs/rl_training.yaml")
+    parser.add_argument("--config", default="configs/rl_training.yaml")
     parser.add_argument("--patient_config", default="configs/patient_sim.yaml")
-    parser.add_argument("--cohort_dir",     default="data/synthetic/cohort")
-    parser.add_argument("--resume",         default=None)
-    parser.add_argument("--sample",         type=int, default=None,
-                        help="Limit to N patients (quick test)")
-    parser.add_argument("--device",         default="cpu")
+    parser.add_argument("--cohort_dir", default="data/synthetic/cohort")
+    parser.add_argument("--resume", default=None)
+    parser.add_argument(
+        "--sample", type=int, default=None, help="Limit to N patients (quick test)"
+    )
+    parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
 
     with open(args.config) as f:
@@ -75,8 +83,12 @@ def main():
     with open("configs/escalation_thresholds.yaml") as f:
         esc_cfg = yaml.safe_load(f)
 
-    merged = {**pt_cfg, **rl_cfg, "preprocessing": pre_cfg,
-               "escalation_thresholds": esc_cfg}
+    merged = {
+        **pt_cfg,
+        **rl_cfg,
+        "preprocessing": pre_cfg,
+        "escalation_thresholds": esc_cfg,
+    }
 
     # Ensure cohort exists
     if not Path(f"{args.cohort_dir}/patients_static.csv").exists():
@@ -87,17 +99,17 @@ def main():
     print("Loading patient cohort…")
     patients = load_patient_data(args.cohort_dir)
     if args.sample:
-        patients = patients[:args.sample]
+        patients = patients[: args.sample]
         print(f"Quick-test mode: using {args.sample} patients")
     print(f"Loaded {len(patients)} patients")
 
     from knowledge.policy_registry import PolicyRegistry
+
     registry = PolicyRegistry()
 
     try:
         from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor
-        from stable_baselines3.common.callbacks import (
-            CheckpointCallback, EvalCallback)
+        from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
         from rl.callbacks import TensorboardRewardCallback
     except ImportError as e:
         print(f"Missing dependency: {e}")
@@ -114,7 +126,9 @@ def main():
     checkpoint_cb = CheckpointCallback(
         save_freq=max(1, rl_cfg["checkpoint_freq"] // n_envs),
         save_path=rl_cfg["checkpoint_dir"],
-        name_prefix="aghealth_ppo", verbose=1)
+        name_prefix="aghealth_ppo",
+        verbose=1,
+    )
 
     eval_env_fn = make_env(patients, merged, registry, 0)
     eval_env = eval_env_fn()
@@ -123,14 +137,17 @@ def main():
         eval_freq=max(1, rl_cfg["eval_freq"] // n_envs),
         n_eval_episodes=rl_cfg["eval_episodes"],
         best_model_save_path=rl_cfg["checkpoint_dir"] + "best/",
-        verbose=1)
+        verbose=1,
+    )
 
     # Use MaskablePPO if available (strongly recommended)
     try:
         from sb3_contrib import MaskablePPO as PPOClass
+
         print("Using MaskablePPO ✓")
     except ImportError:
         from stable_baselines3 import PPO as PPOClass
+
         print("sb3-contrib not installed — using standard PPO")
         print("Install: pip install sb3-contrib")
 
@@ -139,19 +156,22 @@ def main():
         model = PPOClass.load(args.resume, env=vec_env, device=args.device)
     else:
         model = PPOClass(
-            "MlpPolicy", vec_env,
-            learning_rate  = rl_cfg["learning_rate"],
-            n_steps        = rl_cfg["n_steps"],
-            batch_size     = rl_cfg["batch_size"],
-            n_epochs       = rl_cfg["n_epochs"],
-            gamma          = rl_cfg["gamma"],
-            gae_lambda     = rl_cfg["gae_lambda"],
-            clip_range     = rl_cfg["clip_range"],
-            ent_coef       = rl_cfg["ent_coef"],
-            vf_coef        = rl_cfg["vf_coef"],
-            max_grad_norm  = rl_cfg["max_grad_norm"],
-            tensorboard_log= rl_cfg["tensorboard_dir"],
-            verbose=1, device=args.device)
+            "MlpPolicy",
+            vec_env,
+            learning_rate=rl_cfg["learning_rate"],
+            n_steps=rl_cfg["n_steps"],
+            batch_size=rl_cfg["batch_size"],
+            n_epochs=rl_cfg["n_epochs"],
+            gamma=rl_cfg["gamma"],
+            gae_lambda=rl_cfg["gae_lambda"],
+            clip_range=rl_cfg["clip_range"],
+            ent_coef=rl_cfg["ent_coef"],
+            vf_coef=rl_cfg["vf_coef"],
+            max_grad_norm=rl_cfg["max_grad_norm"],
+            tensorboard_log=rl_cfg["tensorboard_dir"],
+            verbose=1,
+            device=args.device,
+        )
 
     total = rl_cfg["total_timesteps"] if not args.sample else 50_000
     print(f"\nStarting training — {total:,} steps across {n_envs} envs")
@@ -160,7 +180,8 @@ def main():
         total_timesteps=total,
         callback=[checkpoint_cb, eval_cb, TensorboardRewardCallback()],
         tb_log_name="aghealth_ppo",
-        reset_num_timesteps=(args.resume is None))
+        reset_num_timesteps=(args.resume is None),
+    )
 
     final = os.path.join(rl_cfg["checkpoint_dir"], "aghealth_final")
     model.save(final)

@@ -4,6 +4,7 @@ drug_checker.py
 Convenience wrapper combining KG + Policy Registry for fast drug-food
 and drug-condition interaction checking at agent runtime.
 """
+
 from knowledge.knowledge_graph import KnowledgeGraph
 from knowledge.policy_registry import PolicyRegistry
 
@@ -13,9 +14,13 @@ class DrugChecker:
         self.kg = kg
         self.registry = registry
 
-    def safe_to_prescribe(self, drug: str, patient_conditions: list[str],
-                           current_meds: list[str],
-                           egfr: float | None = None) -> tuple[bool, str]:
+    def safe_to_prescribe(
+        self,
+        drug: str,
+        patient_conditions: list[str],
+        current_meds: list[str],
+        egfr: float | None = None,
+    ) -> tuple[bool, str]:
         """
         Returns (is_safe: bool, reason: str).
         Checks renal contraindications, known interactions, and dose ceilings.
@@ -29,6 +34,7 @@ class DrugChecker:
                     return False, f"{drug} contraindicated in {cond}"
         return True, "ok"
 
-    def flag_food_interactions(self, medications: list[str],
-                                proposed_foods: list[str]) -> list[dict]:
+    def flag_food_interactions(
+        self, medications: list[str], proposed_foods: list[str]
+    ) -> list[dict]:
         return self.kg.check_plan_conflicts(medications, proposed_foods)

@@ -43,25 +43,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score, roc_curve, auc as sklearn_auc
 
-
 # ── Aesthetics ─────────────────────────────────────────────────────────────────
 _COLORS = {
-    "aghealth":        "#1a7ab5",
+    "aghealth": "#1a7ab5",
     "predictive_only": "#e87722",
-    "rules_only":      "#5ba85f",
-    "human_schedule":  "#999999",
+    "rules_only": "#5ba85f",
+    "human_schedule": "#999999",
 }
 _LABELS = {
-    "aghealth":        "AgHealth+",
+    "aghealth": "AgHealth+",
     "predictive_only": "Predictive-only (B2)",
-    "rules_only":      "Rules-only (B1)",
-    "human_schedule":  "Human-schedule (B3)",
+    "rules_only": "Rules-only (B1)",
+    "human_schedule": "Human-schedule (B3)",
 }
 _LINE_STYLES = {
-    "aghealth":        ("-",  2.5),
+    "aghealth": ("-", 2.5),
     "predictive_only": ("--", 1.8),
-    "rules_only":      ("--", 1.8),
-    "human_schedule":  (":",  1.5),
+    "rules_only": ("--", 1.8),
+    "human_schedule": (":", 1.5),
 }
 _PLOT_ORDER = ["aghealth", "predictive_only", "rules_only", "human_schedule"]
 
@@ -84,17 +83,22 @@ def _load_y_true(cohort_dir: str) -> np.ndarray:
         )
 
     vitals_df = pd.read_csv(vitals_path)
-    events_df  = pd.read_csv(events_path)
+    events_df = pd.read_csv(events_path)
 
-    event_set = set(zip(
-        events_df["patient_id"].astype(int),
-        events_df["t_minutes"].astype(int),
-    ))
+    event_set = set(
+        zip(
+            events_df["patient_id"].astype(int),
+            events_df["t_minutes"].astype(int),
+        )
+    )
 
-    y_true = np.array([
-        1 if (int(r["patient_id"]), int(r["t_minutes"])) in event_set else 0
-        for _, r in vitals_df.iterrows()
-    ], dtype=int)
+    y_true = np.array(
+        [
+            1 if (int(r["patient_id"]), int(r["t_minutes"])) in event_set else 0
+            for _, r in vitals_df.iterrows()
+        ],
+        dtype=int,
+    )
 
     return y_true
 
@@ -132,7 +136,8 @@ def plot_roc(
         if method not in results:
             warnings.warn(
                 f"Method '{method}' not found in results dict — skipping.",
-                UserWarning, stacklevel=2,
+                UserWarning,
+                stacklevel=2,
             )
             continue
 
@@ -142,7 +147,8 @@ def plot_roc(
         if y_score is None or len(y_score) == 0:
             warnings.warn(
                 f"'{method}' has no 'roc_scores' — cannot plot ROC curve.",
-                UserWarning, stacklevel=2,
+                UserWarning,
+                stacklevel=2,
             )
             continue
 
@@ -158,7 +164,8 @@ def plot_roc(
                     f"Shared y_true length ({len(y_true_shared)}) != "
                     f"y_score length for '{method}' ({len(y_score)}). "
                     "Cannot plot this method.",
-                    UserWarning, stacklevel=2,
+                    UserWarning,
+                    stacklevel=2,
                 )
                 continue
             y_true = y_true_shared
@@ -166,44 +173,45 @@ def plot_roc(
             warnings.warn(
                 f"No y_true available for '{method}'. "
                 "Pass cohort_dir= or include '_y_true' in results.",
-                UserWarning, stacklevel=2,
+                UserWarning,
+                stacklevel=2,
             )
             continue
 
         if len(np.unique(y_true)) < 2:
             warnings.warn(
                 f"y_true for '{method}' has only one class — skipping.",
-                UserWarning, stacklevel=2,
+                UserWarning,
+                stacklevel=2,
             )
             continue
 
         # ── Compute ROC curve and AUC from actual data ─────────────────────
         fpr, tpr, _ = roc_curve(y_true, y_score)
-        auc_val      = roc_auc_score(y_true, y_score)
+        auc_val = roc_auc_score(y_true, y_score)
 
         # Prefer bootstrap AUC mean for the legend when available, as it
         # matches the value reported in Table 2.
         boot_aucs = method_res.get("roc_auc")
         if boot_aucs is not None and len(boot_aucs) > 0:
-            auc_display   = float(np.mean(boot_aucs))
-            auc_lo        = float(np.percentile(boot_aucs, 2.5))
-            auc_hi        = float(np.percentile(boot_aucs, 97.5))
-            legend_label  = (
+            auc_display = float(np.mean(boot_aucs))
+            auc_lo = float(np.percentile(boot_aucs, 2.5))
+            auc_hi = float(np.percentile(boot_aucs, 97.5))
+            legend_label = (
                 f"{_LABELS.get(method, method)}  "
                 f"AUC={auc_display:.2f} [{auc_lo:.2f}, {auc_hi:.2f}]"
             )
         else:
-            legend_label = (
-                f"{_LABELS.get(method, method)}  AUC={auc_val:.2f}"
-            )
+            legend_label = f"{_LABELS.get(method, method)}  AUC={auc_val:.2f}"
 
         ls, lw = _LINE_STYLES.get(method, ("-", 1.5))
         ax.plot(
-            fpr, tpr,
-            color = _COLORS.get(method, "#333333"),
-            lw    = lw,
-            ls    = ls,
-            label = legend_label,
+            fpr,
+            tpr,
+            color=_COLORS.get(method, "#333333"),
+            lw=lw,
+            ls=ls,
+            label=legend_label,
         )
         plotted_any = True
 
@@ -211,20 +219,27 @@ def plot_roc(
         warnings.warn(
             "No methods could be plotted.  Check that results contain "
             "'roc_scores' arrays and that y_true is available.",
-            UserWarning, stacklevel=2,
+            UserWarning,
+            stacklevel=2,
         )
 
     # ── Diagonal reference line ───────────────────────────────────────────────
-    ax.plot([0, 1], [0, 1], color="black", lw=1., ls=":", alpha=0.5,
-            label="Random classifier (AUC=0.50)")
+    ax.plot(
+        [0, 1],
+        [0, 1],
+        color="black",
+        lw=1.0,
+        ls=":",
+        alpha=0.5,
+        label="Random classifier (AUC=0.50)",
+    )
 
     ax.set_xlabel("False Positive Rate", fontsize=11)
-    ax.set_ylabel("True Positive Rate",  fontsize=11)
-    ax.set_title("ROC Curves — Escalation Detection", fontsize=12,
-                 fontweight="bold")
+    ax.set_ylabel("True Positive Rate", fontsize=11)
+    ax.set_title("ROC Curves — Escalation Detection", fontsize=12, fontweight="bold")
     ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
-    ax.set_xlim([0., 1.])
-    ax.set_ylim([0., 1.02])
+    ax.set_xlim([0.0, 1.0])
+    ax.set_ylim([0.0, 1.02])
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()

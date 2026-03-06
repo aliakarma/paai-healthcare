@@ -29,13 +29,17 @@ from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, precision_score
 
-
 FEATURE_COLS = [
-    "sbp", "dbp", "glucose_mgdl", "heart_rate", "spo2",
-    "adherence_med", "adherence_diet",
+    "sbp",
+    "dbp",
+    "glucose_mgdl",
+    "heart_rate",
+    "spo2",
+    "adherence_med",
+    "adherence_diet",
 ]
 
-_ESCALATION_SCORE_THRESHOLD = 0.50   # score > this → predicted escalation
+_ESCALATION_SCORE_THRESHOLD = 0.50  # score > this → predicted escalation
 
 
 def train_model(vitals_df: pd.DataFrame) -> tuple:
@@ -53,13 +57,13 @@ def train_model(vitals_df: pd.DataFrame) -> tuple:
     X = vitals_df[FEATURE_COLS].copy()
     # Impute with column means (consistent with evaluation imputation below)
     X = X.fillna(X.mean())
-    scaler  = StandardScaler()
+    scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     model = IsolationForest(
-        n_estimators  = 200,
-        contamination = 0.05,
-        random_state  = 42,
-        n_jobs        = -1,
+        n_estimators=200,
+        contamination=0.05,
+        random_state=42,
+        n_jobs=-1,
     )
     model.fit(X_scaled)
     return model, scaler
@@ -86,13 +90,12 @@ def _anomaly_scores(
     -------
     scores : 1-D float array, same length as vitals_df
     """
-    X = vitals_df[FEATURE_COLS].copy().fillna(
-        vitals_df[FEATURE_COLS].mean())
-    X_scaled   = scaler.transform(X)
+    X = vitals_df[FEATURE_COLS].copy().fillna(vitals_df[FEATURE_COLS].mean())
+    X_scaled = scaler.transform(X)
     raw_scores = model.decision_function(X_scaled)  # higher = more normal
     # Invert so that higher value = more anomalous
-    inverted   = -raw_scores
-    score_min  = inverted.min()
+    inverted = -raw_scores
+    score_min = inverted.min()
     score_range = inverted.max() - score_min + 1e-8
     return ((inverted - score_min) / score_range).astype(float)
 
@@ -128,18 +131,20 @@ def _compute_latency(
             continue
 
         for event_t in event_times:
-            before_mask  = grp["t_minutes"] <= event_t
-            grp_before   = grp[before_mask]
+            before_mask = grp["t_minutes"] <= event_t
+            grp_before = grp[before_mask]
             scores_before = grp_scores.loc[grp_before.index]
 
             alert_mask = scores_before > threshold
             if not alert_mask.any():
-                latencies.append(3600.)
+                latencies.append(3600.0)
                 continue
 
-            first_alert_t = int(grp_before.loc[alert_mask.index[alert_mask]].iloc[0]["t_minutes"])
-            latency_sec   = (event_t - first_alert_t) * 60.
-            latencies.append(min(max(float(latency_sec), 0.), 3600.))
+            first_alert_t = int(
+                grp_before.loc[alert_mask.index[alert_mask]].iloc[0]["t_minutes"]
+            )
+            latency_sec = (event_t - first_alert_t) * 60.0
+            latencies.append(min(max(float(latency_sec), 0.0), 3600.0))
 
     return latencies
 
@@ -166,12 +171,14 @@ def evaluate(cohort_dir: str) -> dict:
         med_precision — np.ndarray, 1000 bootstrap precision values
     """
     vitals_df = pd.read_csv(f"{cohort_dir}/vitals_longitudinal.csv")
-    events_df  = pd.read_csv(f"{cohort_dir}/events.csv")
+    events_df = pd.read_csv(f"{cohort_dir}/events.csv")
 
-    event_set = set(zip(
-        events_df["patient_id"].astype(int),
-        events_df["t_minutes"].astype(int),
-    ))
+    event_set = set(
+        zip(
+            events_df["patient_id"].astype(int),
+            events_df["t_minutes"].astype(int),
+        )
+    )
 
     # ── Train on 20 % random sample ───────────────────────────────────────────
     print("  Training IsolationForest on 20 % of data …")
@@ -182,15 +189,18 @@ def evaluate(cohort_dir: str) -> dict:
     scores = _anomaly_scores(vitals_df, model, scaler)
 
     # ── Ground-truth labels (same row order as vitals_df) ─────────────────────
-    y_true = np.array([
-        1 if (int(r["patient_id"]), int(r["t_minutes"])) in event_set else 0
-        for _, r in vitals_df.iterrows()
-    ], dtype=int)
+    y_true = np.array(
+        [
+            1 if (int(r["patient_id"]), int(r["t_minutes"])) in event_set else 0
+            for _, r in vitals_df.iterrows()
+        ],
+        dtype=int,
+    )
 
     # ── Latency from actual alert timing ─────────────────────────────────────
     latencies = _compute_latency(vitals_df, event_set, scores)
     if not latencies:
-        latencies = [3600.]
+        latencies = [3600.0]
     latency_arr = np.array(latencies, dtype=float)
 
     # ── Bootstrap metrics (1000 resamples, seed=42) ───────────────────────────
@@ -209,10 +219,10 @@ def evaluate(cohort_dir: str) -> dict:
         boot_precs.append(float(precision_score(yt, esc_pred, zero_division=0)))
 
     return {
-        "roc_auc":       np.array(boot_aucs,  dtype=float),
-        "roc_scores":    scores,
-        "y_true":        y_true,
-        "accuracy":      np.array(boot_accs,  dtype=float),
-        "latency":       latency_arr,
+        "roc_auc": np.array(boot_aucs, dtype=float),
+        "roc_scores": scores,
+        "y_true": y_true,
+        "accuracy": np.array(boot_accs, dtype=float),
+        "latency": latency_arr,
         "med_precision": np.array(boot_precs, dtype=float),
     }

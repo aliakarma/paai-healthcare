@@ -29,16 +29,15 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score, precision_score
 from tqdm import tqdm
 
-
 # ── Thresholds (AHA/ADA 2023 — mirrors escalation_criteria.json) ─────────────
-_AUTO_SBP  = 180    # mmHg — automatic escalation
-_WATCH_SBP = 160    # mmHg — watch zone
-_AUTO_GLU_LO  = 54  # mg/dL — severe hypoglycaemia
+_AUTO_SBP = 180  # mmHg — automatic escalation
+_WATCH_SBP = 160  # mmHg — watch zone
+_AUTO_GLU_LO = 54  # mg/dL — severe hypoglycaemia
 _WATCH_GLU_LO = 70  # mg/dL — mild hypoglycaemia
-_AUTO_GLU_HI  = 400 # mg/dL — hyperglycaemic emergency
-_WATCH_GLU_HI = 300 # mg/dL — hyperglycaemic alert
-_AUTO_SPO2  = 90    # % — emergency
-_WATCH_SPO2 = 93    # % — alert
+_AUTO_GLU_HI = 400  # mg/dL — hyperglycaemic emergency
+_WATCH_GLU_HI = 300  # mg/dL — hyperglycaemic alert
+_AUTO_SPO2 = 90  # % — emergency
+_WATCH_SPO2 = 93  # % — alert
 _LOW_ADHERENCE_THRESHOLD = 0.50
 
 
@@ -55,19 +54,27 @@ def predict(vitals: dict) -> tuple[int, float]:
     action : int  — 0 (no action), 1 (med reminder), 4 (escalate)
     score  : float — continuous anomaly score in [0, 1]
     """
-    sbp  = float(vitals.get("sbp",          120.))
-    glc  = float(vitals.get("glucose_mgdl", 100.))
-    spo2 = float(vitals.get("spo2",          98.))
-    adh  = float(vitals.get("adherence_med",  0.7))
+    sbp = float(vitals.get("sbp", 120.0))
+    glc = float(vitals.get("glucose_mgdl", 100.0))
+    spo2 = float(vitals.get("spo2", 98.0))
+    adh = float(vitals.get("adherence_med", 0.7))
 
     # Automatic escalation zone
-    if sbp >= _AUTO_SBP or glc <= _AUTO_GLU_LO or \
-       glc >= _AUTO_GLU_HI or spo2 <= _AUTO_SPO2:
+    if (
+        sbp >= _AUTO_SBP
+        or glc <= _AUTO_GLU_LO
+        or glc >= _AUTO_GLU_HI
+        or spo2 <= _AUTO_SPO2
+    ):
         return 4, 0.92
 
     # Watch zone (elevated but not yet automatic)
-    if sbp >= _WATCH_SBP or glc <= _WATCH_GLU_LO or \
-       glc >= _WATCH_GLU_HI or spo2 <= _WATCH_SPO2:
+    if (
+        sbp >= _WATCH_SBP
+        or glc <= _WATCH_GLU_LO
+        or glc >= _WATCH_GLU_HI
+        or spo2 <= _WATCH_SPO2
+    ):
         return 4, 0.65
 
     # Low adherence → medication reminder
@@ -110,11 +117,11 @@ def _compute_latency(
             if before.empty:
                 continue
 
-            crossings = before[before.apply(
-                lambda r: predict(r.to_dict())[0] == 4, axis=1
-            )]
+            crossings = before[
+                before.apply(lambda r: predict(r.to_dict())[0] == 4, axis=1)
+            ]
             if crossings.empty:
-                latencies.append(3600.)
+                latencies.append(3600.0)
                 continue
 
             first_cross_t = int(crossings["t_minutes"].iloc[0])
@@ -128,11 +135,11 @@ def _compute_latency(
                     break
 
             if escalated_t is not None:
-                latency_sec = (escalated_t - first_cross_t) * 60.
+                latency_sec = (escalated_t - first_cross_t) * 60.0
             else:
-                latency_sec = 3600.
+                latency_sec = 3600.0
 
-            latencies.append(min(float(latency_sec), 3600.))
+            latencies.append(min(float(latency_sec), 3600.0))
 
     return latencies
 
@@ -155,44 +162,49 @@ def evaluate(cohort_dir: str) -> dict:
         med_precision — np.ndarray, 1000 bootstrap precision values
     """
     vitals_df = pd.read_csv(f"{cohort_dir}/vitals_longitudinal.csv")
-    events_df  = pd.read_csv(f"{cohort_dir}/events.csv")
+    events_df = pd.read_csv(f"{cohort_dir}/events.csv")
 
-    event_set = set(zip(
-        events_df["patient_id"].astype(int),
-        events_df["t_minutes"].astype(int),
-    ))
+    event_set = set(
+        zip(
+            events_df["patient_id"].astype(int),
+            events_df["t_minutes"].astype(int),
+        )
+    )
 
-    y_true:        list[int]   = []
-    y_score:       list[float] = []
-    actions:       list[int]   = []
-    action_map:    dict        = {}
+    y_true: list[int] = []
+    y_score: list[float] = []
+    actions: list[int] = []
+    action_map: dict = {}
 
     rng_noise = np.random.default_rng(42)
 
-    for _, row in tqdm(vitals_df.iterrows(), total=len(vitals_df),
-                       desc="Evaluating Rules-only", leave=False):
-        pid   = int(row["patient_id"])
-        t     = int(row["t_minutes"])
+    for _, row in tqdm(
+        vitals_df.iterrows(),
+        total=len(vitals_df),
+        desc="Evaluating Rules-only",
+        leave=False,
+    ):
+        pid = int(row["patient_id"])
+        t = int(row["t_minutes"])
         label = 1 if (pid, t) in event_set else 0
 
         act, base_score = predict(row.to_dict())
         # Small observation noise so AUC is not degenerate
-        score = float(np.clip(
-            base_score + rng_noise.normal(0., 0.04), 0., 1.))
+        score = float(np.clip(base_score + rng_noise.normal(0.0, 0.04), 0.0, 1.0))
 
         y_true.append(label)
         y_score.append(score)
         actions.append(act)
         action_map[(pid, t)] = act
 
-    y_true_arr  = np.array(y_true,   dtype=int)
-    y_score_arr = np.array(y_score,  dtype=float)
-    actions_arr = np.array(actions,  dtype=int)
+    y_true_arr = np.array(y_true, dtype=int)
+    y_score_arr = np.array(y_score, dtype=float)
+    actions_arr = np.array(actions, dtype=int)
 
     # ── Latency from actual threshold crossings ───────────────────────────────
     latencies = _compute_latency(vitals_df, event_set, action_map)
     if not latencies:
-        latencies = [3600.]
+        latencies = [3600.0]
     latency_arr = np.array(latencies, dtype=float)
 
     # ── Bootstrap metrics (1000 resamples, seed=42) ───────────────────────────
@@ -211,10 +223,10 @@ def evaluate(cohort_dir: str) -> dict:
         boot_precs.append(float(precision_score(yt, esc_pred, zero_division=0)))
 
     return {
-        "roc_auc":       np.array(boot_aucs,  dtype=float),
-        "roc_scores":    y_score_arr,
-        "y_true":        y_true_arr,
-        "accuracy":      np.array(boot_accs,  dtype=float),
-        "latency":       latency_arr,
+        "roc_auc": np.array(boot_aucs, dtype=float),
+        "roc_scores": y_score_arr,
+        "y_true": y_true_arr,
+        "accuracy": np.array(boot_accs, dtype=float),
+        "latency": latency_arr,
         "med_precision": np.array(boot_precs, dtype=float),
     }

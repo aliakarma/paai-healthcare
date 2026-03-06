@@ -1,4 +1,5 @@
 """Unit normalisation and z-score scaling for physiological channels."""
+
 import numpy as np
 import yaml
 from pathlib import Path
@@ -12,7 +13,7 @@ class ChannelNormaliser:
             cfg = yaml.safe_load(f)
         norm = cfg["normalisation"]
         self.means = norm["channel_means"]
-        self.stds  = norm["channel_stds"]
+        self.stds = norm["channel_stds"]
 
     def normalise(self, channel: str, values: np.ndarray) -> np.ndarray:
         mu = self.means.get(channel, 0.0)

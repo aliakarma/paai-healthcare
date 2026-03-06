@@ -4,6 +4,7 @@ governance_review.py
 Tier 3 HiTL: Weekly governance committee drift metrics.
 Monitors override frequency, false-positive rates, and subgroup disparities.
 """
+
 import numpy as np
 from pathlib import Path
 import json
@@ -23,10 +24,12 @@ class GovernanceReviewer:
             for line in f:
                 entries.append(json.loads(line.strip()))
 
-        override_entries = [e for e in entries
-                              if e.get("action_type") == "tier2_override"]
-        escalation_entries = [e for e in entries
-                                if e.get("action_type") == "escalation_alert"]
+        override_entries = [
+            e for e in entries if e.get("action_type") == "tier2_override"
+        ]
+        escalation_entries = [
+            e for e in entries if e.get("action_type") == "escalation_alert"
+        ]
         total = len(entries)
 
         return {
