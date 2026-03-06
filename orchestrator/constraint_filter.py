@@ -5,7 +5,10 @@ Projects proposed RL actions onto the feasible set C.
 Implements the Constraint Filter block (Figure 2, paper).
 """
 
+from typing import Optional
+
 import numpy as np
+import yaml
 
 
 class ConstraintFilter:
@@ -14,8 +17,11 @@ class ConstraintFilter:
     Actions that violate prescriber rules are redirected or blocked.
     """
 
-    def __init__(self, policy_registry):
+    def __init__(self, policy_registry, config_path: str = "configs/preprocessing.yaml"):
         self.registry = policy_registry
+        with open(config_path) as f:
+            cfg = yaml.safe_load(f)
+        self.caffeine_cutoff_hour = cfg.get("policy_constraints", {}).get("caffeine_cutoff_hour", 14)
 
     def filter(
         self,
@@ -51,8 +57,7 @@ class ConstraintFilter:
             caf_restriction = self.registry.rules.get("caffeine_restriction", {}).get(
                 "hypertension", {}
             )
-            cutoff = caf_restriction.get("after_hour", 14)
-            if hour >= cutoff and active_policies.get("hypertension"):
+            if hour >= self.caffeine_cutoff_hour and active_policies.get("hypertension"):
                 pass  # Allow but log warning
 
         return proposed_action, "ok"

@@ -27,6 +27,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+import yaml
 from sklearn.metrics import precision_score, roc_auc_score
 from tqdm import tqdm
 
@@ -51,7 +52,28 @@ _TIMESTEP_MIN = 5
 _SECONDS_PER_STEP = _TIMESTEP_MIN * 60
 
 
-def _build_observation(row: pd.Series, window: list[dict]) -> np.ndarray:
+def _load_channel_statistics(config_path: str = "configs/rl_training.yaml") -> tuple[np.ndarray, np.ndarray]:
+    """Load channel normalization statistics from config.
+    
+    Parameters
+    ----------
+    config_path : str
+        Path to RL training configuration file.
+    
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Channel means and standard deviations as float32 arrays.
+    """
+    with open(config_path) as f:
+        cfg = yaml.safe_load(f)
+    stats = cfg.get("channel_statistics", {})
+    means = np.array(stats.get("means", [130.0, 82.0, 110.0, 72.0, 97.5]), dtype=np.float32)
+    stds = np.array(stats.get("stds", [20.0, 12.0, 40.0, 12.0, 2.0]), dtype=np.float32)
+    return means, stds
+
+
+def _build_observation(row: pd.Series, window: list[dict], channel_means: np.ndarray, channel_stds: np.ndarray) -> np.ndarray:
     """Construct the 25-dimensional state vector for one timestep.
 
     Mirrors PatientEnv._get_obs() so that inference outside the Gym
@@ -61,10 +83,11 @@ def _build_observation(row: pd.Series, window: list[dict]) -> np.ndarray:
     ----------
     row    : current vital-sign row from vitals_longitudinal.csv
     window : list of recent vital dicts for rolling statistics (up to 5 steps)
+    channel_means : np.ndarray
+        Mean values for each channel (shape 5).
+    channel_stds : np.ndarray
+        Standard deviation for each channel (shape 5).
     """
-    CHANNEL_MEANS = np.array([130.0, 82.0, 110.0, 72.0, 97.5], dtype=np.float32)
-    CHANNEL_STDS = np.array([20.0, 12.0, 40.0, 12.0, 2.0], dtype=np.float32)
-
     raw = np.array(
         [
             row.get("sbp", 130.0),
@@ -76,7 +99,7 @@ def _build_observation(row: pd.Series, window: list[dict]) -> np.ndarray:
         dtype=np.float32,
     )
 
-    vitals_z = (raw - CHANNEL_MEANS) / CHANNEL_STDS  # (5,)
+    vitals_z = (raw - channel_means) / channel_stds  # (5,)
 
     # Rolling mean over window (up to 5 steps)
     if window:
@@ -93,7 +116,7 @@ def _build_observation(row: pd.Series, window: list[dict]) -> np.ndarray:
             ],
             dtype=np.float32,
         )
-        rolling_mean = win_arr.mean(axis=0) / CHANNEL_MEANS  # (5,)
+        rolling_mean = win_arr.mean(axis=0) / channel_means  # (5,)
     else:
         rolling_mean = np.ones(5, dtype=np.float32)
 
@@ -302,6 +325,9 @@ def evaluate_aghealth(cohort_dir: str, model_path: str) -> dict:
 
     registry = PolicyRegistry()
     model, is_maskable = _load_policy(model_path)
+    
+    # Load channel normalization statistics
+    channel_means, channel_stds = _load_channel_statistics()
 
     y_true: list[int] = []
     y_score: list[float] = []
@@ -317,7 +343,7 @@ def evaluate_aghealth(cohort_dir: str, model_path: str) -> dict:
             t = int(row["t_minutes"])
             label = 1 if (int(pid), t) in event_set else 0
 
-            obs = _build_observation(row, window)
+            obs = _build_observation(row, window, channel_means, channel_stds)
             mask = _build_action_mask(row.to_dict(), registry)
             act = _predict(model, obs, is_maskable, mask)
 

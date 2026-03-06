@@ -35,3 +35,9 @@ anomaly_gating:
     bp_minutes: 30
     glucose_minutes: 60
     heart_rate_minutes: 15
+
+feature_store:
+  max_window_samples: 720  # 3 days at 5-min resolution (720 = 60h / 5min)
+
+policy_constraints:
+  caffeine_cutoff_hour: 14  # Restrict dietary mods (caffeine) after 2 PM for hypertension

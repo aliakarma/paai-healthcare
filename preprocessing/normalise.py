@@ -17,11 +17,39 @@ class ChannelNormaliser:
         self.stds = norm["channel_stds"]
 
     def normalise(self, channel: str, values: np.ndarray) -> np.ndarray:
+        """Normalize channel values to zero mean and unit variance.
+        
+        Parameters
+        ----------
+        channel : str
+            Name of the physiological channel.
+        values : np.ndarray
+            Input values to normalize.
+        
+        Returns
+        -------
+        np.ndarray
+            Normalized values as float32 array.
+        """
         mu = self.means.get(channel, 0.0)
         sigma = self.stds.get(channel, 1.0)
         return ((values - mu) / sigma).astype(np.float32)
 
     def denormalise(self, channel: str, values: np.ndarray) -> np.ndarray:
+        """Reverse normalization to original scale.
+        
+        Parameters
+        ----------
+        channel : str
+            Name of the physiological channel.
+        values : np.ndarray
+            Normalized values.
+        
+        Returns
+        -------
+        np.ndarray
+            Denormalized values as float32 array.
+        """
         mu = self.means.get(channel, 0.0)
         sigma = self.stds.get(channel, 1.0)
         return (values * sigma + mu).astype(np.float32)

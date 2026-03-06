@@ -6,24 +6,44 @@ Stores recent vital sign windows and pre-computes trend features.
 """
 
 from collections import deque
+from pathlib import Path
+from typing import Optional
 
 import numpy as np
+import yaml
 
 
 class FeatureStore:
     """Maintains a rolling window of recent vital readings per patient."""
 
     CHANNELS = ["sbp", "dbp", "glucose_mgdl", "heart_rate", "spo2"]
-    MAX_WINDOW = 720  # 60 minutes at 5-min resolution = 12 steps; keep 720 (3 days)
 
-    def __init__(self):
+    def __init__(self, config_path: str = "configs/preprocessing.yaml"):
+        """Initialize feature store with max window size from config.
+        
+        Parameters
+        ----------
+        config_path : str
+            Path to preprocessing configuration file.
+        """
+        with open(config_path) as f:
+            cfg = yaml.safe_load(f)
+        self.max_window = cfg.get("feature_store", {}).get("max_window_samples", 720)
         self._windows: dict[int, dict[str, deque]] = {}
 
-    def push(self, patient_id: int, vital: dict):
-        """Add a new vital reading for a patient."""
+    def push(self, patient_id: int, vital: dict) -> None:
+        """Add a new vital reading for a patient.
+        
+        Parameters
+        ----------
+        patient_id : int
+            Patient identifier.
+        vital : dict
+            Dictionary of vital signs for current timestep.
+        """
         if patient_id not in self._windows:
             self._windows[patient_id] = {
-                ch: deque(maxlen=self.MAX_WINDOW) for ch in self.CHANNELS
+                ch: deque(maxlen=self.max_window) for ch in self.CHANNELS
             }
         for ch in self.CHANNELS:
             self._windows[patient_id][ch].append(vital.get(ch, np.nan))

@@ -37,3 +37,9 @@ tensorboard_dir: rl/tensorboard/
 
 eval_freq: 100000
 eval_episodes: 20
+
+# Channel normalization statistics for observation construction
+# Must match preprocessing.yaml normalisation section
+channel_statistics:
+  means: [130.0, 82.0, 110.0, 72.0, 97.5]  # [sbp, dbp, glucose_mgdl, heart_rate, spo2]
+  stds: [20.0, 12.0, 40.0, 12.0, 2.0]
