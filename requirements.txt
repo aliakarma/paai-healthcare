@@ -41,7 +41,7 @@ statsmodels==0.14.2
 pingouin==0.5.4
 
 # Utilities
-tqdm==4.66.2
+tqdm>=4.66
 joblib==1.4.0
 
 # Jupyter notebooks
