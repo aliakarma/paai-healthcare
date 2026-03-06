@@ -31,10 +31,7 @@
 ## Funding & Support
 
 ### Financial Support
-This research was conducted with support from:
-- **Islamic University of Madinah** — Faculty of Computer and Information Systems infrastructure grant
-- **Multimedia University** — Research collaboration agreement
-- **Effat University** — Computing resources
+Authors receive no funding for this research.
 
 ### Computational Resources
 - Synthetic experiments: University computing cluster (8× CPU, 32 GB RAM, 50 GB SSD per run)
