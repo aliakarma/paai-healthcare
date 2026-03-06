@@ -1,8 +1,7 @@
 """metrics.py — All evaluation metrics for Table 2 and supporting figures."""
 
 import numpy as np
-from sklearn.metrics import (f1_score, precision_score, recall_score,
-                             roc_auc_score)
+from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score
 
 
 def compute_roc_auc(y_true: np.ndarray, y_score: np.ndarray) -> float:

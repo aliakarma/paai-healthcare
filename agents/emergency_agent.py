@@ -51,7 +51,13 @@ from enum import Enum, auto
 from typing import Any
 
 from agents.base_agent import (  # VitalSigns removed — imported but never referenced (Issue 5)
-    ActionType, AgentAction, AgentResult, BaseAgent, PatientState, Urgency)
+    ActionType,
+    AgentAction,
+    AgentResult,
+    BaseAgent,
+    PatientState,
+    Urgency,
+)
 
 logger = logging.getLogger(__name__)
 

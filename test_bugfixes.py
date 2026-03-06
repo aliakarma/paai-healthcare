@@ -240,8 +240,12 @@ class TestLocalReplan(unittest.TestCase):
         if "agents.nutrition_agent" in sys.modules:
             del sys.modules["agents.nutrition_agent"]
 
-        from agents.nutrition_agent import (FoodItem, MealPlan,
-                                            NutrientTargets, NutritionAgent)
+        from agents.nutrition_agent import (
+            FoodItem,
+            MealPlan,
+            NutrientTargets,
+            NutritionAgent,
+        )
 
         agent = NutritionAgent(
             policy_registry=MagicMock(),

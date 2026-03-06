@@ -109,8 +109,7 @@ def main():
     registry = PolicyRegistry()
 
     try:
-        from stable_baselines3.common.callbacks import (CheckpointCallback,
-                                                        EvalCallback)
+        from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
         from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor
 
         from rl.callbacks import TensorboardRewardCallback
