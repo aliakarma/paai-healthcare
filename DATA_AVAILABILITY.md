@@ -152,7 +152,7 @@ DrugBank content is included under CC BY-NC 4.0; derivative clinical guidelines 
 
 - **Synthetic cohort issues**: [GitHub Issues](https://github.com/aliakarma/paai-healthcare/issues)
 - **MIMIC-IV access**: [PhysioNet Help](https://physionet.org/help/)
-- **General inquiries**: toqeer@iu.edu.sa
+- **General inquiries**: 443059463@stu.iu.edu.sa
 
 ---
 
