@@ -164,6 +164,69 @@ def delong_test(
     return p_value
 
 
+def delongs_test(
+    y_true: np.ndarray, y_score_a: np.ndarray, y_score_b: np.ndarray
+) -> tuple[float, float]:
+    """DeLong et al. (1988) test — public alias returning ``(p_value, z_stat)``.
+
+    Wraps :func:`delong_test` and additionally returns the z-statistic so
+    callers can inspect the effect size and direction of the difference.
+
+    Parameters
+    ----------
+    y_true    : 1-D binary label array shared by both classifiers.
+    y_score_a : 1-D score array for classifier A.
+    y_score_b : 1-D score array for classifier B.
+
+    Returns
+    -------
+    p_value : float — two-tailed p-value for H₀: AUC_A = AUC_B.
+    z_stat  : float — z-statistic (positive = AUC_A > AUC_B).
+    """
+    y_true = np.asarray(y_true, dtype=int)
+    y_score_a = np.asarray(y_score_a, dtype=float)
+    y_score_b = np.asarray(y_score_b, dtype=float)
+
+    if len(y_true) != len(y_score_a) or len(y_true) != len(y_score_b):
+        raise ValueError("y_true, y_score_a, and y_score_b must have the same length.")
+
+    n_pos = int(y_true.sum())
+    n_neg = len(y_true) - n_pos
+
+    if n_pos == 0 or n_neg == 0:
+        raise ValueError(
+            "y_true must contain at least one positive and one negative label."
+        )
+
+    auc_a, V10_a, V01_a = _structural_components(y_true, y_score_a)
+    auc_b, V10_b, V01_b = _structural_components(y_true, y_score_b)
+
+    def _cov2(u: np.ndarray, v: np.ndarray) -> np.ndarray:
+        m = np.column_stack([u, v])
+        return np.cov(m, rowvar=False, ddof=1)
+
+    S10 = _cov2(V10_a, V10_b)
+    S01 = _cov2(V01_a, V01_b)
+    S = S10 / n_pos + S01 / n_neg
+
+    L = np.array([1.0, -1.0])
+    auc_diff = auc_a - auc_b
+    var_diff = float(L @ S @ L)
+
+    if var_diff <= 0.0:
+        warnings.warn(
+            "DeLong variance estimate is non-positive "
+            f"(var={var_diff:.6e}).  Returning (p=1.0, z=0.0).",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return 1.0, 0.0
+
+    z = float(auc_diff / np.sqrt(var_diff))
+    p_value = float(2.0 * stats.norm.sf(abs(z)))
+    return p_value, z
+
+
 def delong_test_from_bootstrap(
     boot_aucs_a: np.ndarray,
     boot_aucs_b: np.ndarray,
@@ -195,7 +258,7 @@ def delong_test_from_bootstrap(
 # ── Supporting tests ──────────────────────────────────────────────────────────
 
 
-def wilcoxon_test(arr_a: np.ndarray, arr_b: np.ndarray) -> float:
+def wilcoxon_test(arr_a: np.ndarray, arr_b: np.ndarray) -> tuple[float, float]:
     """Wilcoxon signed-rank test for paired comparisons of bootstrap samples.
 
     Parameters
@@ -206,19 +269,20 @@ def wilcoxon_test(arr_a: np.ndarray, arr_b: np.ndarray) -> float:
     Returns
     -------
     p_value : float — two-tailed p-value.  Returns 1.0 if sample is too small.
+    statistic : float — Wilcoxon W statistic (0.0 when arrays are identical).
     """
     n = min(len(arr_a), len(arr_b))
     if n < 5:
-        return 1.0
+        return 1.0, 0.0
     a, b = np.asarray(arr_a[:n], dtype=float), np.asarray(arr_b[:n], dtype=float)
     diffs = a - b
     if np.all(diffs == 0.0):
-        return 1.0  # identical — trivially equal
+        return 1.0, 0.0  # identical — trivially equal
     try:
-        _, p = stats.wilcoxon(a, b, alternative="two-sided")
-        return float(p)
+        result = stats.wilcoxon(a, b, alternative="two-sided")
+        return float(result.pvalue), float(result.statistic)
     except Exception:
-        return 1.0
+        return 1.0, 0.0
 
 
 def bonferroni_correct(p_val: float, n_tests: int) -> float:
@@ -257,3 +321,24 @@ def cohens_d(arr_a: np.ndarray, arr_b: np.ndarray) -> float:
     if pooled_std < 1e-12:
         return 0.0
     return float((np.mean(a) - np.mean(b)) / pooled_std)
+
+
+def bonferroni_correction(p_values: list | np.ndarray) -> np.ndarray:
+    """Apply Bonferroni correction to an array of p-values.
+
+    Each p-value is multiplied by the total number of comparisons
+    (len(p_values)) and the result is clipped to [0, 1].
+
+    Parameters
+    ----------
+    p_values : sequence of uncorrected p-values
+
+    Returns
+    -------
+    corrected : np.ndarray of Bonferroni-corrected p-values, capped at 1.0
+    """
+    arr = np.asarray(p_values, dtype=float)
+    n_tests = len(arr)
+    if n_tests < 1:
+        raise ValueError("p_values must not be empty")
+    return np.minimum(arr * n_tests, 1.0)

@@ -416,7 +416,7 @@ def run_ablation(cohort_dir: str, model_path: str) -> list[dict]:
         if name == "AgHealth+ (full)":
             p_str = "—"
         else:
-            raw_p = wilcoxon_test(full_aucs, res["roc_auc"])
+            raw_p, _ = wilcoxon_test(full_aucs, res["roc_auc"])
             corr_p = bonferroni_correct(raw_p, n_tests=4)
             p_str = f"< 0.001" if corr_p < 0.001 else f"{corr_p:.3f}"
 
