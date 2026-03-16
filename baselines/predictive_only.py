@@ -226,3 +226,55 @@ def evaluate(cohort_dir: str) -> dict:
         "latency": latency_arr,
         "med_precision": np.array(boot_precs, dtype=float),
     }
+
+
+class PredictiveBaseline:
+    """Object-oriented wrapper providing a heuristic anomaly-score interface.
+
+    Uses z-score deviation from normal vital-sign ranges to produce a
+    continuous anomaly score in [0, 1].  This avoids the need for a
+    pre-fitted IsolationForest when running unit tests or quick demos.
+    The score is fully deterministic — no random state is involved.
+
+    Normal reference ranges mirror the channel statistics in
+    ``configs/rl_training.yaml``.
+    """
+
+    # (mean, std) reference pairs for each vital channel
+    _NORMAL = {
+        "sbp": (120.0, 20.0),
+        "dbp": (80.0, 12.0),
+        "glucose_mgdl": (100.0, 40.0),
+        "heart_rate": (70.0, 12.0),
+        "spo2": (97.5, 2.0),
+    }
+
+    # Scale factor for the exponential anomaly mapping: score = 1 - exp(-k * z_mean).
+    # k=0.5 maps z=1 (1-SD deviation) to ≈0.39 and z=4 (4-SD deviation) to ≈0.86,
+    # which gives intuitive scores for common clinical abnormality levels.
+    _Z_SCORE_SCALE: float = 0.5
+
+    def predict_score(self, vitals: dict) -> float:
+        """Return a continuous anomaly score in [0, 1].
+
+        Higher scores indicate more abnormal vital signs.
+        """
+        z_scores = []
+        for key, (mean, std) in self._NORMAL.items():
+            val = float(vitals.get(key, mean))
+            z_scores.append(abs(val - mean) / std)
+        z_mean = float(np.mean(z_scores))
+        # Sigmoid-like mapping: 0 → 0, large z → approaches 1
+        score = 1.0 - float(np.exp(-self._Z_SCORE_SCALE * z_mean))
+        return float(np.clip(score, 0.0, 1.0))
+
+    def predict(self, vitals: dict) -> int:
+        """Return a discrete action based on the anomaly score threshold."""
+        score = self.predict_score(vitals)
+        if score >= 0.7:
+            return 4  # escalate
+        if score >= 0.4:
+            return 3  # watch
+        if score >= 0.2:
+            return 1  # reminder
+        return 0  # no action

@@ -52,22 +52,62 @@ _TIMESTEP_MIN = 5
 _SECONDS_PER_STEP = _TIMESTEP_MIN * 60
 
 
+def _build_channel_statistics() -> tuple[np.ndarray, np.ndarray]:
+    """Return hardcoded default channel normalization statistics.
+
+    These defaults correspond to population-level vital-sign reference
+    ranges and are used when no config file is available.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        Channel means and standard deviations as float32 arrays of shape (5,).
+    """
+    means = np.array([130.0, 82.0, 110.0, 72.0, 97.5], dtype=np.float32)
+    stds = np.array([20.0, 12.0, 40.0, 12.0, 2.0], dtype=np.float32)
+    return means, stds
+
+
 def _load_channel_statistics(config_path: str = "configs/rl_training.yaml") -> tuple[np.ndarray, np.ndarray]:
     """Load channel normalization statistics from config.
-    
+
+    Falls back to the hardcoded defaults from :func:`_build_channel_statistics`
+    when the config file does not exist or does not contain a
+    ``channel_statistics`` key.
+
     Parameters
     ----------
     config_path : str
-        Path to RL training configuration file.
-    
+        Path to RL training configuration file.  Relative paths are
+        resolved from the repository root (the directory containing
+        this file's parent package).
+
     Returns
     -------
     tuple[np.ndarray, np.ndarray]
         Channel means and standard deviations as float32 arrays.
     """
-    with open(config_path) as f:
-        cfg = yaml.safe_load(f)
+    # Resolve relative path from repo root so the function works regardless
+    # of the current working directory.
+    resolved = Path(config_path)
+    if not resolved.is_absolute():
+        repo_root = Path(__file__).resolve().parents[1]
+        resolved = repo_root / config_path
+
+    try:
+        with open(resolved) as f:
+            cfg = yaml.safe_load(f)
+    except FileNotFoundError:
+        logger.warning(
+            "Config file '%s' not found; using default channel statistics.",
+            config_path,
+        )
+        return _build_channel_statistics()
+
     stats = cfg.get("channel_statistics", {})
+    if not stats:
+        return _build_channel_statistics()
+
     means = np.array(stats.get("means", [130.0, 82.0, 110.0, 72.0, 97.5]), dtype=np.float32)
     stds = np.array(stats.get("stds", [20.0, 12.0, 40.0, 12.0, 2.0]), dtype=np.float32)
     return means, stds

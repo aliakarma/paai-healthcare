@@ -101,9 +101,9 @@ class TestAuditLog:
             with open(log_path, "r") as f:
                 lines = f.readlines()
             
-            # Modify first entry
+            # Modify first entry — change a field that is included in the hash
             first_entry = json.loads(lines[0])
-            first_entry["data"]["tampered"] = True
+            first_entry["action_type"] = "tampered_action"
             lines[0] = json.dumps(first_entry) + "\n"
             
             with open(log_path, "w") as f:

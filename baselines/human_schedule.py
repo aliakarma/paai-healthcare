@@ -203,3 +203,58 @@ def evaluate(cohort_dir: str) -> dict:
         "latency": latency_arr,
         "med_precision": np.array(boot_precs, dtype=float),
     }
+
+
+class HumanScheduleBaseline:
+    """Object-oriented wrapper for the fixed human-designed review schedule.
+
+    Replicates the module-level scheduling logic with an added safety
+    override: critical vital-sign readings always trigger escalation
+    regardless of the time-of-day schedule (in practice, a clinician
+    on call would always respond to an alarm system).
+
+    Critical thresholds mirror ``escalation_criteria.json``.
+    """
+
+    # Automatic escalation thresholds (mirrors escalation_criteria.json)
+    _AUTO_SBP = 180.0
+    _AUTO_GLU_LO = 54.0
+    _AUTO_GLU_HI = 400.0
+    _AUTO_SPO2 = 90.0
+    _AUTO_HR_HI = 130.0
+    _AUTO_HR_LO = 40.0
+
+    def _is_crisis(self, vitals: dict) -> bool:
+        """Return True if any vital sign crosses the automatic-escalation threshold."""
+        sbp = float(vitals.get("sbp", 120.0))
+        glc = float(vitals.get("glucose_mgdl", 100.0))
+        spo2 = float(vitals.get("spo2", 98.0))
+        hr = float(vitals.get("heart_rate", 70.0))
+        return (
+            sbp >= self._AUTO_SBP
+            or glc <= self._AUTO_GLU_LO
+            or glc >= self._AUTO_GLU_HI
+            or spo2 <= self._AUTO_SPO2
+            or hr >= self._AUTO_HR_HI
+            or hr <= self._AUTO_HR_LO
+        )
+
+    def predict(self, vitals: dict) -> int:
+        """Return the recommended action (0–4).
+
+        Always escalates (action 4) during a clinical crisis.  Otherwise
+        follows the daily 09:00 review schedule, escalating only when
+        SBP > 160 mmHg at review time.
+        """
+        if self._is_crisis(vitals):
+            return 4
+
+        # Convert t_hour to minutes for _is_review_time()
+        t_hour = float(vitals.get("t_hour", 0.0))
+        t_minutes = int(t_hour * 60)
+        sbp = float(vitals.get("sbp", 120.0))
+
+        if _is_review_time(t_minutes) and sbp > _SBP_THRESHOLD:
+            return 4
+
+        return 0

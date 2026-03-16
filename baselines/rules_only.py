@@ -230,3 +230,16 @@ def evaluate(cohort_dir: str) -> dict:
         "latency": latency_arr,
         "med_precision": np.array(boot_precs, dtype=float),
     }
+
+
+class RulesOnlyBaseline:
+    """Object-oriented wrapper around the module-level :func:`predict` function.
+
+    Provides the ``.predict(vitals)`` interface expected by the test suite
+    and ``run_evaluation.py``.
+    """
+
+    def predict(self, vitals: dict) -> int:
+        """Apply threshold rules and return the recommended action (0–4)."""
+        action, _ = predict(vitals)
+        return action

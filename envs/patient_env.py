@@ -29,16 +29,18 @@ class PatientEnv(gym.Env):
 
     def __init__(
         self,
-        patient_data: dict,
-        config: dict,
-        policy_registry: PolicyRegistry,
+        patient_data: dict | None = None,
+        config: dict | None = None,
+        policy_registry: PolicyRegistry | None = None,
         render_mode: Optional[str] = None,
     ):
         super().__init__()
-        self.patient_data = patient_data
-        self.config = config
-        self.P = policy_registry
-        self.constraint_set = ConstraintSet(policy_registry)
+        # Provide safe defaults so the environment can be instantiated with
+        # no arguments (useful for unit tests and quick demos).
+        self.patient_data = patient_data if patient_data is not None else {}
+        self.config = config if config is not None else {}
+        self.P = policy_registry if policy_registry is not None else PolicyRegistry()
+        self.constraint_set = ConstraintSet(self.P)
         self.render_mode = render_mode
 
         self.observation_space = spaces.Box(
@@ -46,7 +48,7 @@ class PatientEnv(gym.Env):
         )
         self.action_space = spaces.Discrete(N_ACTIONS)
 
-        self._vitals_list = patient_data.get("vitals", [])
+        self._vitals_list = self.patient_data.get("vitals", [])
         self.max_steps = len(self._vitals_list)
         self.current_step = 0
         self.episode_reward = 0.0
