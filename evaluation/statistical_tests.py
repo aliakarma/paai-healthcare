@@ -202,10 +202,6 @@ def delongs_test(
     auc_a, V10_a, V01_a = _structural_components(y_true, y_score_a)
     auc_b, V10_b, V01_b = _structural_components(y_true, y_score_b)
 
-    def _cov2(u: np.ndarray, v: np.ndarray) -> np.ndarray:
-        m = np.column_stack([u, v])
-        return np.cov(m, rowvar=False, ddof=1)
-
     S10 = _cov2(V10_a, V10_b)
     S01 = _cov2(V01_a, V01_b)
     S = S10 / n_pos + S01 / n_neg
