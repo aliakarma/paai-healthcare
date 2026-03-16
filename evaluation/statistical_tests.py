@@ -169,8 +169,9 @@ def delongs_test(
 ) -> tuple[float, float]:
     """DeLong et al. (1988) test — public alias returning ``(p_value, z_stat)``.
 
-    Wraps :func:`delong_test` and additionally returns the z-statistic so
-    callers can inspect the effect size and direction of the difference.
+    Computes the same DeLong test as :func:`delong_test` but additionally
+    returns the z-statistic so callers can inspect the effect size and
+    direction of the difference.
 
     Parameters
     ----------
