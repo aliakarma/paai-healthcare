@@ -1,0 +1,31 @@
+{
+  "drug_classes": {
+    "ACE_inhibitor": {
+      "cross_reactive": ["ARB"],
+      "symptoms": ["angioedema", "persistent_cough"],
+      "action": "immediate_discontinue_escalate"
+    },
+    "penicillin": {
+      "cross_reactive": ["amoxicillin", "ampicillin"],
+      "action": "avoid_beta_lactams"
+    },
+    "sulfonamide": {
+      "cross_reactive": ["thiazide_diuretic"],
+      "action": "avoid_sulfa_drugs"
+    }
+  },
+  "food_allergies": {
+    "shellfish": {"iodine_contrast_alert": true},
+    "soy": {"avoid": ["soy_milk", "tofu", "edamame"]},
+    "lactose_intolerance": {
+      "avoid": ["dairy"],
+      "supplement": "calcium_citrate_1000mg"
+    }
+  },
+  "nsaid_sensitivity": {
+    "aspirin_sensitive": {
+      "avoid": ["ibuprofen", "naproxen", "diclofenac"],
+      "alternative": "paracetamol"
+    }
+  }
+}
