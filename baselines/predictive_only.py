@@ -149,7 +149,11 @@ def _compute_latency(
     return latencies
 
 
-def evaluate(cohort_dir: str) -> dict:
+def evaluate(
+    cohort_dir: str,
+    patient_ids: set[int] | None = None,
+    train_patient_ids: set[int] | None = None,
+) -> dict:
     """Evaluate the IsolationForest baseline on the synthetic cohort.
 
     Training uses a random 20 % sample (``random_state=42``) to avoid
@@ -170,8 +174,21 @@ def evaluate(cohort_dir: str) -> dict:
         latency       — np.ndarray, per-event latency in seconds
         med_precision — np.ndarray, 1000 bootstrap precision values
     """
-    vitals_df = pd.read_csv(f"{cohort_dir}/vitals_longitudinal.csv")
-    events_df = pd.read_csv(f"{cohort_dir}/events.csv")
+    vitals_df_all = pd.read_csv(f"{cohort_dir}/vitals_longitudinal.csv")
+    events_df_all = pd.read_csv(f"{cohort_dir}/events.csv")
+
+    if patient_ids is not None:
+        vitals_df = vitals_df_all[
+            vitals_df_all["patient_id"].astype(int).isin(patient_ids)
+        ].copy()
+        events_df = events_df_all[
+            events_df_all["patient_id"].astype(int).isin(patient_ids)
+        ].copy()
+    else:
+        vitals_df = vitals_df_all.copy()
+        events_df = events_df_all.copy()
+
+    vitals_df = vitals_df.sort_values(["patient_id", "t_minutes"]).reset_index(drop=True)
 
     event_set = set(
         zip(
@@ -181,9 +198,15 @@ def evaluate(cohort_dir: str) -> dict:
     )
 
     # ── Train on 20 % random sample ───────────────────────────────────────────
-    print("  Training IsolationForest on 20 % of data …")
-    train_sample = vitals_df.sample(frac=0.20, random_state=42)
-    model, scaler = train_model(train_sample)
+    if train_patient_ids is not None:
+        train_df = vitals_df_all[
+            vitals_df_all["patient_id"].astype(int).isin(train_patient_ids)
+        ].copy()
+    else:
+        train_df = vitals_df.copy()
+
+    print("  Training IsolationForest on train split only …")
+    model, scaler = train_model(train_df)
 
     # ── Score full dataset ────────────────────────────────────────────────────
     scores = _anomaly_scores(vitals_df, model, scaler)
