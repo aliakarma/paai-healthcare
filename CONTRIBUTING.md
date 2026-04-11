@@ -129,7 +129,6 @@ python -m pytest tests/ --cov=. --cov-report=html
 
 ### Tests Locations
 - `tests/` — main test suite
-- `test_bugfixes.py` — regression tests (root directory)
 - Each major module should have corresponding test file
 
 ## Documentation Standards

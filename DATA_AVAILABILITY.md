@@ -54,8 +54,7 @@ All synthetic patient features are defined in `data/synthetic/patient_schema.jso
 
 ### Available Aggregates (Non-Identifiable)
 The following aggregate statistics may be shared without DUA violation:
-- `data/mimic/cohort_summary.json` — basic cohort statistics (counts, age distributions)
-- `data/mimic/feature_distributions.json` — aggregate feature means/stds
+- `data/mimic/extracted/cohort_summary.json` — basic cohort statistics (counts, age distributions)
 
 ---
 
