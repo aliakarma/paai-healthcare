@@ -60,13 +60,12 @@ This produces `data/mimic/extracted/vitals_mimic.csv` and
 python evaluation/run_evaluation.py --mode mimic
 ```
 
-Results are saved to `evaluation/results/mimic_validation_results.json`.
+Results are saved to `evaluation/results/mimic_validation.json`.
 
 ---
 
 ## What IS committed to this repo
 
 - `data/mimic/extract_cohort.py` — extraction script
-- `data/mimic/preprocess_mimic.py` — preprocessing script
 - `data/mimic/README.md` — this file
 - `data/mimic/extracted/cohort_summary.json` — non-identifiable aggregate stats only
