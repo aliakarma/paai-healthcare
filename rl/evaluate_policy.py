@@ -173,10 +173,11 @@ def _build_observation(row: pd.Series, window: list[dict], channel_means: np.nda
 
     t_min = float(row.get("t_minutes", 0))
     t_h = (t_min / 60.0) % 24.0
+    day_index = int(t_min // (24.0 * 60.0))
     context = np.array(
         [
             t_h / 24.0,
-            (t_h // 24.0 % 7.0) / 7.0,
+            (day_index % 7.0) / 7.0,
             float(abs(t_h % 4.0 - 2.0) < 0.5),
             row.get("adherence_lifestyle", 0.6),
         ],
@@ -323,7 +324,9 @@ def _compute_latency_seconds(
     return latencies
 
 
-def evaluate_aghealth(cohort_dir: str, model_path: str) -> dict:
+def evaluate_aghealth(
+    cohort_dir: str, model_path: str, patient_ids: set[int] | None = None
+) -> dict:
     """Run the trained AgHealth+ RL policy on the full synthetic cohort.
 
     Parameters
@@ -354,6 +357,10 @@ def evaluate_aghealth(cohort_dir: str, model_path: str) -> dict:
 
     vitals_df = pd.read_csv(vitals_path)
     events_df = pd.read_csv(events_path)
+    if patient_ids is not None:
+        vitals_df = vitals_df[vitals_df["patient_id"].astype(int).isin(patient_ids)]
+        events_df = events_df[events_df["patient_id"].astype(int).isin(patient_ids)]
+    vitals_df = vitals_df.sort_values(["patient_id", "t_minutes"]).reset_index(drop=True)
 
     # Ground-truth event set: (patient_id, t_minutes)
     event_set = set(
@@ -456,6 +463,7 @@ def evaluate_aghealth(cohort_dir: str, model_path: str) -> dict:
     return {
         "roc_auc": np.array(boot_aucs, dtype=float),
         "roc_scores": y_score_arr,
+        "y_true": y_true_arr,
         "accuracy": np.array(boot_accs, dtype=float),
         "latency": latency_arr,
         "med_precision": np.array(boot_precs, dtype=float),

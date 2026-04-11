@@ -113,10 +113,11 @@ class PatientEnv(gym.Env):
         # Context (4)
         t_min = vit.get("t_minutes", idx * 5)
         t_h = (t_min / 60) % 24
+        day_index = int(t_min // (24 * 60))
         context = np.array(
             [
                 t_h / 24,
-                (t_h // 24 % 7) / 7,
+                (day_index % 7) / 7,
                 float(abs(t_h % 4 - 2) < 0.5),  # near meal
                 vit.get("adherence_lifestyle", 0.6),
             ],

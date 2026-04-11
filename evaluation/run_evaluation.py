@@ -18,6 +18,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from evaluation.splits import load_patient_ids
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
@@ -30,7 +32,14 @@ LABELS = {
 }
 
 
-def run_synthetic(cohort_dir: str, model_path: str, output_dir: str):
+def run_synthetic(
+    cohort_dir: str,
+    model_path: str,
+    output_dir: str,
+    split_dir: str,
+    eval_split: str,
+    train_split: str,
+):
     os.makedirs(output_dir, exist_ok=True)
     print("\n" + "=" * 60)
     print("SYNTHETIC COHORT EVALUATION")
@@ -45,15 +54,22 @@ def run_synthetic(cohort_dir: str, model_path: str, output_dir: str):
     from evaluation.plots.plot_learning_curves import plot_learning_curves
     from evaluation.plots.plot_med_quality import plot_med_quality
     from evaluation.plots.plot_roc import plot_roc
-    from evaluation.statistical_tests import bonferroni_correct, delong_test_from_bootstrap
+    from evaluation.statistical_tests import bonferroni_correct, delong_test
     from rl.evaluate_policy import evaluate_aghealth
+
+    eval_ids = load_patient_ids(split_dir, eval_split)
+    train_ids = load_patient_ids(split_dir, train_split)
 
     print("\nRunning baselines and AgHealth+…")
     results = {
-        "rules_only": eval_b1(cohort_dir),
-        "predictive_only": eval_b2(cohort_dir),
-        "human_schedule": eval_b3(cohort_dir),
-        "aghealth": evaluate_aghealth(cohort_dir, model_path),
+        "rules_only": eval_b1(cohort_dir, patient_ids=eval_ids),
+        "predictive_only": eval_b2(
+            cohort_dir,
+            patient_ids=eval_ids,
+            train_patient_ids=train_ids,
+        ),
+        "human_schedule": eval_b3(cohort_dir, patient_ids=eval_ids),
+        "aghealth": evaluate_aghealth(cohort_dir, model_path, patient_ids=eval_ids),
     }
 
     # ── Table 2 ──────────────────────────────────────────────
@@ -71,8 +87,10 @@ def run_synthetic(cohort_dir: str, model_path: str, output_dir: str):
         lat_med = float(np.median(r["latency"]))
         prec_m = float(np.mean(r["med_precision"]))
         if m != "aghealth":
+            y_true = results["aghealth"]["y_true"]
             pv = bonferroni_correct(
-                delong_test_from_bootstrap(r["roc_auc"], results["aghealth"]["roc_auc"]), n_tests=3
+                delong_test(y_true, r["roc_scores"], results["aghealth"]["roc_scores"]),
+                n_tests=3,
             )
             pv_str = f"< {pv:.3f}"
         else:
@@ -95,14 +113,15 @@ def run_synthetic(cohort_dir: str, model_path: str, output_dir: str):
     print("\n" + "=" * 60)
     print("TABLE 3: ABLATION STUDY")
     print("=" * 60)
-    ablation = run_ablation(cohort_dir, model_path)
+    ablation = run_ablation(cohort_dir, model_path, patient_ids=eval_ids)
     abl_df = pd.DataFrame(ablation)
     print(abl_df.to_string(index=False))
     abl_df.to_csv(f"{output_dir}/table3_ablation.csv", index=False)
 
     # ── Figures ───────────────────────────────────────────────
     print("\nGenerating figures…")
-    plot_roc(results, f"{output_dir}/fig3_roc.pdf")
+    results["_y_true"] = results["aghealth"]["y_true"]
+    plot_roc(results, f"{output_dir}/fig3_roc.pdf", cohort_dir=cohort_dir)
     plot_med_quality(results, f"{output_dir}/fig4_med_quality.pdf")
     plot_latency_cdf(results, f"{output_dir}/fig5_latency_cdf.pdf")
     plot_adherence(results, f"{output_dir}/fig6_adherence.pdf")
@@ -146,9 +165,14 @@ def main():
     )
     parser.add_argument("--cohort_dir", default="data/synthetic/cohort")
     parser.add_argument("--mimic_dir", default="data/mimic")
-    parser.add_argument("--model_path", default="rl/checkpoints/best/best_model.zip")
+    parser.add_argument("--model_path", default="rl/checkpoints/aghealth_final.zip")
     parser.add_argument("--output_dir", default="evaluation/results")
+    parser.add_argument("--split_dir", default=None)
+    parser.add_argument("--eval_split", default="test", choices=["train", "val", "test"])
+    parser.add_argument("--train_split", default="train", choices=["train", "val", "test"])
     args = parser.parse_args()
+
+    split_dir = args.split_dir or f"{args.cohort_dir}/splits"
 
     if not Path(f"{args.cohort_dir}/vitals_longitudinal.csv").exists():
         print(
@@ -158,7 +182,14 @@ def main():
         sys.exit(1)
 
     if args.mode in ("synthetic", "all"):
-        run_synthetic(args.cohort_dir, args.model_path, args.output_dir)
+        run_synthetic(
+            args.cohort_dir,
+            args.model_path,
+            args.output_dir,
+            split_dir,
+            args.eval_split,
+            args.train_split,
+        )
     if args.mode in ("mimic", "all"):
         run_mimic(args.mimic_dir, args.model_path, args.output_dir)
 

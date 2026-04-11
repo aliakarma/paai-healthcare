@@ -96,6 +96,7 @@ class _RulesOnlyPolicy:
 def _evaluate_variant(
     cohort_dir: str,
     registry,
+    patient_ids: Optional[set[int]] = None,
     use_constraint_filter: bool = True,
     use_knowledge_graph: bool = True,
     use_rl: bool = True,
@@ -118,6 +119,10 @@ def _evaluate_variant(
     """
     vitals_df = pd.read_csv(Path(cohort_dir) / "vitals_longitudinal.csv")
     events_df = pd.read_csv(Path(cohort_dir) / "events.csv")
+    if patient_ids is not None:
+        vitals_df = vitals_df[vitals_df["patient_id"].astype(int).isin(patient_ids)]
+        events_df = events_df[events_df["patient_id"].astype(int).isin(patient_ids)]
+    vitals_df = vitals_df.sort_values(["patient_id", "t_minutes"]).reset_index(drop=True)
     event_set = set(
         zip(
             events_df["patient_id"].astype(int),
@@ -222,10 +227,11 @@ def _evaluate_variant(
                     dtype=np.float32,
                 )
                 t_h = (t / 60.0) % 24.0
+                day_index = int(t // (24 * 60))
                 context = np.array(
                     [
                         t_h / 24.0,
-                        (t_h // 24.0 % 7.0) / 7.0,
+                        (day_index % 7.0) / 7.0,
                         float(abs(t_h % 4.0 - 2.0) < 0.5),
                         vd.get("adherence_lifestyle", 0.6),
                     ],
@@ -331,7 +337,9 @@ def _evaluate_variant(
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
-def run_ablation(cohort_dir: str, model_path: str) -> list[dict]:
+def run_ablation(
+    cohort_dir: str, model_path: str, patient_ids: Optional[set[int]] = None
+) -> list[dict]:
     """Run all five ablation variants and return a results table.
 
     Each variant is executed by actually disabling the relevant component.
@@ -395,6 +403,7 @@ def run_ablation(cohort_dir: str, model_path: str) -> list[dict]:
         res = _evaluate_variant(
             cohort_dir=cohort_dir,
             registry=registry,
+            patient_ids=patient_ids,
             use_constraint_filter=vcfg["use_constraint_filter"],
             use_knowledge_graph=vcfg["use_knowledge_graph"],
             use_rl=vcfg["use_rl"],
