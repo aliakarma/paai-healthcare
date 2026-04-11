@@ -98,7 +98,7 @@ python -m pytest tests/ -v
 - [ ] New code includes type hints
 - [ ] All tests pass locally: `python -m pytest tests/ -v`
 - [ ] No unnecessary dependencies added
-- [ ] Changes don't break reproducibility conditions (`--seed 42`)
+- [ ] Changes don't break reproducibility conditions (fixed seed in configs + patient-level splits)
 
 ### PR Description
 Include:
@@ -161,7 +161,7 @@ def check_medication_interaction(drug_a: str, drug_b: str) -> bool:
 **Important**: This codebase implements a published research methodology. When contributing:
 
 1. **Do not change default hyperparameters** in `configs/` without discussion
-2. **Preserve `--seed 42` behavior** — results must be reproducible
+2. **Preserve fixed-seed behavior (`configs/patient_sim.yaml`, default `seed: 42`)**
 3. **Document any algorithmic changes** clearly
 4. **Test against baseline results** in Table 2 of the paper
 

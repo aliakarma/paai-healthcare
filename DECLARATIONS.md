@@ -74,7 +74,7 @@ All dependencies are properly cited in `requirements.txt` and `CITATION.cff`.
 - Will be (or has been) published on GitHub + Zenodo for persistent archiving upon publication
 
 ### Reproducibility
-- **Seed fixation**: `--seed 42` ensures deterministic reproduction
+- **Seed fixation**: `configs/patient_sim.yaml` uses `seed: 42` by default for deterministic cohort generation
 - **Dependency pinning**: All Python package versions locked in `requirements.txt`
 - **Docker/containerization**: Future work to improve portability
 
