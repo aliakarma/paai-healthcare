@@ -38,6 +38,7 @@ except ImportError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from data.synthetic.adherence_model import AdherenceModel
 from data.synthetic.hazard_model import HazardModel
+from evaluation.splits import write_patient_splits
 
 
 def load_config(config_path: str) -> dict:
@@ -326,6 +327,14 @@ def main():
     ]
     events_df.to_csv(f"{args.output_dir}/events.csv", index=False)
 
+    # Deterministic patient-level splits for leakage-free training/evaluation.
+    split_dir = f"{args.output_dir}/splits"
+    split_map = write_patient_splits(
+        patient_ids=static_df["patient_id"].astype(int).tolist(),
+        output_dir=split_dir,
+        seed=int(cfg.get("seed", 42)),
+    )
+
     # Summary statistics
     print(f"\n{'='*60}")
     print(f"Dataset Summary")
@@ -345,6 +354,10 @@ def main():
         print(
             f"  Event breakdown         : {events_df['event_type'].value_counts().to_dict()}"
         )
+    print(
+        "  Split sizes             : "
+        f"train={len(split_map['train'])}, val={len(split_map['val'])}, test={len(split_map['test'])}"
+    )
     print(f"\n  Files saved to: {args.output_dir}/")
 
 

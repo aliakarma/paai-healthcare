@@ -21,6 +21,8 @@ from pathlib import Path
 import numpy as np
 import yaml
 
+from evaluation.splits import load_patient_ids
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
@@ -48,6 +50,11 @@ def load_patient_data(cohort_dir: str) -> list:
     return patients
 
 
+def filter_patients_by_ids(patients: list, allowed_ids: set[int]) -> list:
+    """Keep only patients whose IDs are in the provided split set."""
+    return [p for p in patients if int(p.get("patient_id", -1)) in allowed_ids]
+
+
 def make_env(patient_data_list, config, policy_registry, rank, seed=42):
     from stable_baselines3.common.utils import set_random_seed
 
@@ -72,6 +79,9 @@ def main():
     parser.add_argument(
         "--sample", type=int, default=None, help="Limit to N patients (quick test)"
     )
+    parser.add_argument("--split_dir", default=None)
+    parser.add_argument("--train_split", default="train", choices=["train", "val", "test"])
+    parser.add_argument("--eval_split", default="val", choices=["train", "val", "test"])
     parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
 
@@ -99,10 +109,30 @@ def main():
 
     print("Loading patient cohort…")
     patients = load_patient_data(args.cohort_dir)
+
+    split_dir = args.split_dir or f"{args.cohort_dir}/splits"
+    train_ids = load_patient_ids(split_dir, args.train_split)
+    eval_ids = load_patient_ids(split_dir, args.eval_split)
+
+    patients = filter_patients_by_ids(patients, train_ids)
+    eval_patients = filter_patients_by_ids(load_patient_data(args.cohort_dir), eval_ids)
+
     if args.sample:
         patients = patients[: args.sample]
         print(f"Quick-test mode: using {args.sample} patients")
-    print(f"Loaded {len(patients)} patients")
+    if not patients:
+        raise RuntimeError(
+            f"No patients found in split '{args.train_split}'. Split dir: {split_dir}"
+        )
+    if not eval_patients:
+        raise RuntimeError(
+            f"No patients found in split '{args.eval_split}'. Split dir: {split_dir}"
+        )
+
+    print(
+        f"Loaded train patients={len(patients)} from split '{args.train_split}', "
+        f"eval patients={len(eval_patients)} from split '{args.eval_split}'"
+    )
 
     from knowledge.policy_registry import PolicyRegistry
 
@@ -133,7 +163,7 @@ def main():
         verbose=1,
     )
 
-    eval_env_fn = make_env(patients, merged, registry, 0)
+    eval_env_fn = make_env(eval_patients, merged, registry, 0)
     eval_env = eval_env_fn()
     eval_cb = EvalCallback(
         eval_env,

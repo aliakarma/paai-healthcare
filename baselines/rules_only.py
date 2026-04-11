@@ -144,7 +144,7 @@ def _compute_latency(
     return latencies
 
 
-def evaluate(cohort_dir: str) -> dict:
+def evaluate(cohort_dir: str, patient_ids: set[int] | None = None) -> dict:
     """Evaluate the rules-only baseline on the synthetic cohort.
 
     Parameters
@@ -163,6 +163,10 @@ def evaluate(cohort_dir: str) -> dict:
     """
     vitals_df = pd.read_csv(f"{cohort_dir}/vitals_longitudinal.csv")
     events_df = pd.read_csv(f"{cohort_dir}/events.csv")
+    if patient_ids is not None:
+        vitals_df = vitals_df[vitals_df["patient_id"].astype(int).isin(patient_ids)]
+        events_df = events_df[events_df["patient_id"].astype(int).isin(patient_ids)]
+    vitals_df = vitals_df.sort_values(["patient_id", "t_minutes"]).reset_index(drop=True)
 
     event_set = set(
         zip(
