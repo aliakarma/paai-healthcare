@@ -18,9 +18,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from evaluation.splits import load_patient_ids
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from evaluation.splits import load_patient_ids
 
 
 METHODS = ["rules_only", "predictive_only", "human_schedule", "aghealth"]

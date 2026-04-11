@@ -21,9 +21,9 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from evaluation.splits import load_patient_ids
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from evaluation.splits import load_patient_ids
 
 
 def load_patient_data(cohort_dir: str) -> list:
