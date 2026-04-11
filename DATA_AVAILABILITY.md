@@ -7,7 +7,7 @@
 ### Access Method
 Generate the synthetic cohort locally using:
 ```bash
-python data/synthetic/generate_patients.py --seed 42 --num_patients 500 --months 12
+python data/synthetic/generate_patients.py --config configs/patient_sim.yaml
 ```
 
 ### About the Dataset
@@ -17,16 +17,17 @@ python data/synthetic/generate_patients.py --seed 42 --num_patients 500 --months
 | **Generation Code** | `data/synthetic/generate_patients.py` + `data/synthetic/adherence_model.py` + `data/synthetic/hazard_model.py` |
 | **GitHub Repository** | [github.com/aliakarma/paai-healthcare](https://github.com/aliakarma/paai-healthcare) |
 | **License** | Apache 2.0 (same as codebase) |
-| **Reproducibility** | Deterministic given `--seed 42` |
+| **Reproducibility** | Deterministic with fixed `seed` in `configs/patient_sim.yaml` (default: 42) |
 | **Zenodo Archive** | Will be published upon journal acceptance |
 
 ### Output Format
 ```
-data/synthetic/cohort_500_12mo_seed42/
+data/synthetic/cohort/
 ├── patients_static.csv           # Demographics, conditions, medications
 ├── vitals_longitudinal.csv       # Time-series: BP, HR, SpO2, glucose, weight
-├── medications_adherence.csv     # Adherence patterns for each patient
-└── cohort_metadata.json          # Dataset generation parameters
+├── medications.csv               # Assigned regimens by patient
+├── events.csv                    # Ground-truth rare event labels
+└── splits/                       # train/val/test patient ID files
 ```
 
 ### Data Dictionary
@@ -60,14 +61,13 @@ The following aggregate statistics may be shared without DUA violation:
 
 ## RL Policy Checkpoints
 
-**Availability**: Distributed with repository; model weights in public release.
+**Availability**: Generated locally by training. No checkpoint binaries are committed to this repository by default.
 
 ### Checkpoint Details
 | File | Details |
 |------|---------|
-| `rl/checkpoints/aghealth_ppo_500k_steps.zip` | Policy trained for 500k environment steps |
-| `rl/checkpoints/aghealth_ppo_2m_steps.zip` | **Recommended for paper results** — final policy (2M steps) |
-| `rl/checkpoints/baseline_predictive_*.pkl` | Pretrained anomaly detector (sklearn) for baseline B2 |
+| `rl/checkpoints/aghealth_final.zip` | Final checkpoint written by `python rl/train.py` |
+| `rl/checkpoints/best/` | Best-model snapshots during training (if eval callback saves one) |
 
 ### How to Use
 ```python
@@ -76,7 +76,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 # Load trained policy
-model = PPO.load("rl/checkpoints/aghealth_ppo_2m_steps")
+model = PPO.load("rl/checkpoints/aghealth_final.zip")
 
 # Evaluate or continue training
 obs, info = env.reset()
@@ -86,7 +86,7 @@ next_obs, reward, done, info = env.step(action)
 
 ### Reproducibility
 All checkpoints are trained with:
-- Fixed seed: `--seed 42`
+- Fixed seed in `configs/patient_sim.yaml` (default: `seed: 42`)
 - Hyperparameters: `configs/rl_training.yaml`
 - Exact environment: `envs/patient_env.py`
 
