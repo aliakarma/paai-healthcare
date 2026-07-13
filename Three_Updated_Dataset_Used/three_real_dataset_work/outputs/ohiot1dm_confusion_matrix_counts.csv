@@ -1,0 +1,5 @@
+cell,count
+true_low_pred_low,2498
+true_low_pred_high,124
+true_high_pred_low,295
+true_high_pred_high,2372

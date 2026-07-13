@@ -1,0 +1,20 @@
+{
+  "dataset": "OhioT1DM",
+  "slug": "ohiot1dm",
+  "rows": 28341,
+  "train_rows": 23052,
+  "test_rows": 5289,
+  "features": 10,
+  "target_rule": "future 30 minute hypo/hyperglycemia event",
+  "cutoff": 0.0,
+  "split": "official training/testing XML split",
+  "best_model": "AgHealth+",
+  "best_metrics": {
+    "model": "AgHealth+",
+    "accuracy": 0.9207789752316128,
+    "precision": 0.9503205128205128,
+    "recall": 0.8893888263967004,
+    "f1": 0.9188456323842727,
+    "roc_auc": 0.9711669336527442
+  }
+}
