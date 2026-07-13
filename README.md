@@ -17,6 +17,44 @@ A research-grade, split-aware ML systems repository for chronic disease manageme
 
 ---
 
+## Real Dataset Evaluation Branch
+
+This branch adds a clean real-dataset evaluation package under:
+
+`Three_Updated_Dataset_Used/`
+
+The goal is to keep the paper methods the same and rerun the evaluation on three real datasets:
+
+- **OhioT1DM** for glucose-risk and diabetes monitoring.
+- **WESAD** for wearable stress and lifestyle-signal validation.
+- **PPG-DaLiA** for wearable PPG, activity, and heart-rate risk validation.
+
+The same four paper methods are evaluated:
+
+- **Rules-only (B1)**
+- **Predictive-only (B2)**
+- **Human-schedule (B3)**
+- **AgHealth+**
+
+### Best Real-Dataset Results
+
+| Dataset | Best Model | Accuracy | Precision | Recall | F1 | ROC AUC |
+|---|---|---:|---:|---:|---:|---:|
+| OhioT1DM | AgHealth+ | 0.9208 | 0.9503 | 0.8894 | 0.9188 | 0.9712 |
+| WESAD | AgHealth+ | 0.8519 | 1.0000 | 0.3333 | 0.5000 | 0.9435 |
+| PPG-DaLiA | Predictive-only (B2) | 0.8178 | 0.2238 | 0.5000 | 0.3092 | 0.8324 |
+
+Detailed outputs are included here:
+
+- `Three_Updated_Dataset_Used/three_real_dataset_work/docs/paper_replacement_numbers.md`
+- `Three_Updated_Dataset_Used/three_real_dataset_work/evaluation/results/model_metrics.csv`
+- `Three_Updated_Dataset_Used/three_real_dataset_work/notebooks/three_real_dataset_end_to_end_executed.ipynb`
+- `Three_Updated_Dataset_Used/three_real_dataset_work/evaluation/figures/`
+
+Large raw dataset zip files are not committed to GitHub. The processed CSV tables, metrics, notebooks, and paper-ready figures are included.
+
+---
+
 ## Documentation Index
 
 [![Architecture](https://img.shields.io/badge/Architecture-0ea5e9?style=for-the-badge&logo=gitbook&logoColor=white)](docs/architecture.md)

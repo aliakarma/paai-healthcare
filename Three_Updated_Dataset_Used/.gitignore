@@ -1,0 +1,14 @@
+.venv/
+venv/
+env/
+__pycache__/
+.ipynb_checkpoints/
+jupyter_runtime/
+*.pyc
+*.pyo
+*.tmp
+*.lock
+.DS_Store
+Thumbs.db
+data/*.zip
+data/**/*.zip
