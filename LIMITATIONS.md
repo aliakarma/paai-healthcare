@@ -83,7 +83,7 @@ When deploying or extending this work, consider:
 
 ## Reproducibility Notes
 
-- **Random seed**: All results use `--seed 42`. Different seeds may yield different convergence curves (σ = 0.01)
+- **Random seeds**: All final results are reported as the `mean \pm SD` across 5 random seeds (seeds 42, 1337, 2024, 7, 91) to capture seed-level training variance. Individual runs and local cohort generation default to `--seed 42` for consistency.
 - **Hardware variability**: GPU vendor and CUDA version can affect RL convergence timing (not final performance)
 - **Dependency versions**: Exact versions in `requirements.txt` are pinned; deviations may cause numerical differences
 - **Temporal drift**: MIMIC-IV features are time-dependent; evaluation performed on specific date range (see `data/mimic/extract_cohort.py`)
