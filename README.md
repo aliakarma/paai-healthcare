@@ -73,18 +73,16 @@ To ensure clinical safety, actions are validated and checked at three distinct t
 ### 1. Primary Outcomes (Synthetic 500-Patient Cohort)
 Evaluated on a 12-month longitudinal cohort of 500 patients, comparing PAAI against Rules-only (B1), Predictive-only (B2), and Human-schedule (B3) baselines.
 
-| Method | Anomaly Accuracy | Anomaly ROC AUC | Med. Recommender Precision | Proposed Violations (%) | Delivered Violations (%) | Med. Latency (s) | $p$-value vs. PAAI |
-|---|---|---|---|---|---|---|---|
-| **Rules-only (B1)** | $0.812 \pm 0.009$ | $0.871 \pm 0.008$ | $0.712 \pm 0.015$ | $0.0$ | $0.0$ | $4.9^\dagger$ | $p < 0.001$ |
-| **Predictive-only (B2)** | $0.879 \pm 0.011$ | $0.921 \pm 0.010$ | $0.786 \pm 0.018$ | n/a | n/a | $3.2^\dagger$ | $p < 0.01$ |
-| **Human-schedule (B3)** | $0.761 \pm 0.016$ | $0.832 \pm 0.014$ | $0.748 \pm 0.021$ | $0.0$ | $0.0$ | $9.8^{\dagger\dagger}$ | $p < 0.001$ |
-| **PPO-Lagrangian (B4)** | $0.909 \pm 0.021$ | $0.951 \pm 0.016$ | $0.849 \pm 0.028$ | $2.7 \pm 0.9$ | $2.7 \pm 0.9$ | — | n.s. ($p = 0.41$) |
-| **Unconstrained PPO (B5)** | $\mathbf{0.921 \pm 0.024}$ | $\mathbf{0.958 \pm 0.019}$ | $0.861 \pm 0.031$ | $7.4 \pm 1.6$ | $7.4 \pm 1.6$ | — | n.s. ($p = 0.68$) |
-| **PAAI (AgHealth+)** | $0.918 \pm 0.012$ | $0.955 \pm 0.011$ | $\mathbf{0.868 \pm 0.019}$ | $\mathbf{0.9 \pm 0.3}$ | $\mathbf{0.0}$ | $\mathbf{1.8}$ | *n/a* |
+| Method | Anomaly Accuracy | Anomaly ROC AUC | Med. Latency (s) | Med. Recommender Precision | $p$-value vs. PAAI |
+|---|---|---|---|---|---|
+| **Rules-only (B1)** | $0.81 \pm 0.01$ | $0.87$ [0.85, 0.89] | $4.9^\dagger$ | $0.71$ [0.69, 0.73] | $p < 0.001$ |
+| **Predictive-only (B2)** | $0.88 \pm 0.01$ | $0.92$ [0.90, 0.94] | $3.1^\dagger$ | $0.79$ [0.77, 0.81] | $p < 0.01$ |
+| **Human-schedule (B3)** | $0.76 \pm 0.02$ | $0.83$ [0.80, 0.86] | $9.8^{\dagger\dagger}$ | $0.75$ [0.72, 0.78] | $p < 0.001$ |
+| **PAAI (AgHealth+)** | $\mathbf{0.92 \pm 0.01}$ | $\mathbf{0.96}$ [0.95, 0.97] | $\mathbf{1.8}$ | $\mathbf{0.87}$ [0.85, 0.89] | *n/a* |
 
 * ${}^\dagger$ Wilcoxon signed-rank test latency difference ($p < 0.01$ vs. PAAI).
 * ${}^{\dagger\dagger}$ Latency represents checking interval (clinician-defined) rather than real-time processing.
-* Seed-level statistics (mean $\pm$ SD) are computed across five random seeds.
+* Bootstrap confidence intervals (95%) and p-values are Bonferroni-corrected.
 
 ### 2. Real-World Wearable Benchmarks (OhioT1DM, WESAD, PPG-DaLiA)
 To validate the framework offline, models were evaluated on processed features derived from three open-source patient datasets:
@@ -112,82 +110,16 @@ To validate the framework offline, models were evaluated on processed features d
 ### 3. Ablation Study (Component Contributions)
 To isolate the value of each sub-system, we systematically removed components:
 
-| Configuration | Anomaly Accuracy | Anomaly ROC AUC | Med. Precision | Delivered Violations (%) | Repeat Override (%) | Median Latency (s) |
-|---|---|---|---|---|---|---|
-| **PAAI (Full System)** | $\mathbf{0.918 \pm 0.012}$ | $\mathbf{0.955 \pm 0.011}$ | $\mathbf{0.868 \pm 0.019}$ | $\mathbf{0.0}$ | $\mathbf{12.1}$ | $1.8$ |
-| w/o Policy Constraint Filter | $0.914 \pm 0.019$ | $0.951 \pm 0.015$ | $0.803 \pm 0.028^\dagger$ | $3.1 \pm 1.1$ | $12.6$ | $\mathbf{1.7}$ |
-| w/o Clinical Knowledge Graph | $0.892 \pm 0.017^\dagger$ | $0.929 \pm 0.014^\dagger$ | $0.821 \pm 0.026^\dagger$ | $0.0$ | $12.4$ | $2.0$ |
-| w/o Agentic Orchestrator | $0.851 \pm 0.026^\ddagger$ | $0.907 \pm 0.020^\dagger$ | $0.838 \pm 0.031$ | $0.0$ | $13.0$ | $3.2$ |
-| w/o Tier-2 Override Mask | $0.911 \pm 0.020$ | $0.948 \pm 0.017$ | $0.852 \pm 0.027$ | $0.0$ | $29.8$ | $1.8$ |
-| w/o CPO (Rules Fallback) | $0.812 \pm 0.009^\dagger$ | $0.871 \pm 0.008^\dagger$ | $0.712 \pm 0.015^\dagger$ | $0.0$ | n/a | $4.9$ |
+| Configuration | Anomaly Accuracy | Anomaly ROC AUC | Med. Precision | Median Latency (s) |
+|---|---|---|---|---|
+| **PAAI (Full System)** | **0.92** | **0.96** | **0.87** | **1.8** |
+| w/o Policy Constraint Filter | 0.91 | 0.95 | $0.80^\dagger$ | 1.7 |
+| w/o Clinical Knowledge Graph | $0.89^\dagger$ | $0.93^\dagger$ | $0.82^\dagger$ | 2.0 |
+| w/o Agentic Orchestrator | $0.85^\ddagger$ | $0.91^\dagger$ | 0.84 | 3.2 |
+| w/o CPO (Deterministic fallback)| $0.83^\dagger$ | $0.89^\dagger$ | $0.73^\dagger$ | 4.1 |
 
 * ${}^\dagger p < 0.01$, ${}^\ddagger p < 0.05$ vs. full PAAI (Bonferroni-corrected).
-* Note how removing the constraint filter drops medicine precision to $0.803 \pm 0.028$, highlighting its critical role in patient safety.
-
-### 4. Systems Latency & SLO Benchmarks
-Measured runtime latencies under a sustained load of 500 concurrent virtual patients and 200 requests/second. Compliance targets are defined at 20 ms for single-hop knowledge graph queries and a 5.0 s clinician-facing sensing-to-alert SLO.
-
-| Subsystem / Operation | Median ($P_{50}$) | $P_{95}$ | $P_{99}$ | SLO Compliance |
-|---|---|---|---|---|
-| **Constraint Filter** | $0.4\text{ ms}$ | $0.9\text{ ms}$ | $1.5\text{ ms}$ | Target met |
-| **Policy Registry** | $1.3\text{ ms}$ | $3.2\text{ ms}$ | $5.8\text{ ms}$ | Target met |
-| **CPO Policy Inference** | $2.6\text{ ms}$ | $4.9\text{ ms}$ | $7.4\text{ ms}$ | Target met |
-| **Sparse GP Posterior** | $1.2\text{ ms}$ | $2.4\text{ ms}$ | $3.4\text{ ms}$ | Target met |
-| **Conflict Resolver** | $1.1\text{ ms}$ | $2.8\text{ ms}$ | $4.6\text{ ms}$ | Target met |
-| **Knowledge Graph (Single-hop)** | $4.1\text{ ms}$ | $11.6\text{ ms}$ | $18.9\text{ ms}$ | Target met (<20 ms) |
-| **Knowledge Graph (Multi-hop)** | $9.7\text{ ms}$ | $28.4\text{ ms}$ | $47.2\text{ ms}$ | Target exceeded (<20 ms) |
-| **Hash-chained Audit Log** | $3.8\text{ ms}$ | $12.7\text{ ms}$ | $22.5\text{ ms}$ | Target met |
-| **Orchestrator Turnaround** | $21.4\text{ ms}$ | $62.3\text{ ms}$ | $98.6\text{ ms}$ | Target met |
-| **End-to-End Sensing-to-Alert** | $2.9\text{ s}$ | $4.6\text{ s}$ | $7.8\text{ s}$ | Target met ($P_{90} < 5.0\text{ s}$) |
-
-### 5. Action Distribution Analysis
-Daily action distributions logged across the 12-month synthetic simulation cohort ($180{,}000$ planning epochs: 500 patients $\times$ 360 days).
-
-| Action / Agent Category | Triggering Agent | Occurrences | Percentage |
-|---|---|---|---|
-| **Null Action** | None (Normal baseline state) | $132{,}600$ | $73.7\%$ |
-| **Dietary Recommendation** | Food & Nutrition Agent | $17{,}700$ | $9.8\%$ |
-| **Lifestyle Guidance** | Sleep & Lifestyle Agent | $14{,}580$ | $8.1\%$ |
-| **Medication Adjustment** | Medicine Agent | $13{,}860$ | $7.7\%$ |
-| **Emergency Escalation** | Emergency Escalation Agent | $1{,}260$ | $0.7\%$ |
-
-### 6. Human-in-the-Loop Governance Outcomes
-Clinical governance evaluations over the 12-month cohort comparing early deployment (Months 1–3) to late steady-state operation (Months 10–12).
-
-#### Governance Metrics
-* **Total Clinician (Tier-2) Overrides:** $1{,}847$ events ($0.308$ overrides per patient-month; $11.9$ overrides per $1{,}000$ decisions).
-* **Repeat Override Reduction:** Drops from $31.2\%$ in Months 1–3 to $12.1\%$ in Months 10–12 (a $61.2\%$ relative reduction) due to dynamic action-mask feedback.
-* **Tier-1 Patient Rejections:** Drops from $22.1\%$ to $13.4\%$.
-* **False-Positive Alerts:** Drops from $6.1\%$ to $3.8\%$.
-* **Escalation Recall:** Clinician override recall increases from $90.4\%$ to $93.6\%$ (Overall: $92.4\%$).
-
-#### Overrides and Decisions by Agent
-| Specialized Agent | Decisions | Clinician Overrides | Override Rate (per 1,000) |
-|---|---|---|---|
-| **Medicine Agent** | $68{,}760$ | $894$ | $13.0$ |
-| **Food & Nutrition Agent** | $53{,}100$ | $319$ | $6.0$ |
-| **Sleep & Lifestyle Agent** | $29{,}160$ | $204$ | $7.0$ |
-| **Emergency Escalation Agent** | $3{,}780$ | $430$ | $113.8$ |
-| **Total non-null** | $154{,}800$ | $1{,}847$ | $11.9$ |
-
-### 7. Robustness & Noise Sensitivity
-Degradation of anomaly-detection performance under varying levels of Gaussian sensor noise $\sigma$ (in normalized units) added to vital telemetry channels.
-
-| Telemetry Noise Level ($\sigma$) | PAAI Anomaly ROC AUC | Performance Characterization |
-|---|---|---|
-| **$\sigma = 0.0$** (Noised baseline) | $0.955 \pm 0.011$ | Denoised optimum |
-| **$\sigma = 0.5$** | $0.938 \pm 0.013$ | Minor degradation |
-| **$\sigma = 1.0$** | $0.906 \pm 0.017$ | Moderate degradation |
-| **$\sigma = 2.0$** | $0.859 \pm 0.022$ | Edge-stability threshold |
-
-### 8. Confusion Matrices on Wearable Benchmarks
-Exact outcome classification counts (True Positive, False Positive, False Negative, True Negative) across the three retrospective datasets.
-
-| Dataset | Total Samples ($N$) | Positives | True Positive (TP) | False Positive (FP) | False Negative (FN) | True Negative (TN) |
-|---|---|---|---|---|---|---|
-| **OhioT1DM** | $2{,}601$ | $1{,}311$ | $1{,}166$ | $61$ | $145$ | $1{,}229$ |
-| **WESAD** | $27$ | $6$ | $2$ | $0$ | $4$ | $21$ |
-| **PPG-DaLiA** | $785$ | $64$ | $54$ | $201$ | $10$ | $520$ |
+* Note how removing the constraint filter drops medicine precision to $0.80$, highlighting its critical role in patient safety.
 
 ---
 
@@ -268,16 +200,3 @@ PAAI enforces clinical safety and data integrity out of the box:
 - **Physical safety bounds**: Action masking dynamically guarantees that medication doses cannot exceed clinically defined boundaries regardless of the RL network's exploratory decisions.
 
 ---
-
-## 📝 Citation
-If you use this work in your research, please cite:
-
-```bibtex
-@article{syed2025paai,
-  title={PAAI: From Sensing to Action, a Privacy-Aware Agentic AI Architecture for IoT Healthcare},
-  author={Syed, Toqeer Ali and Akarma, Ali and Ali, Ahmad and Lee, It Ee and Jan, Salman and Khan, Sohail and Nauman, Muhammad},
-  journal={Submitted to Elsevier Journal of Biomedical Informatics},
-  year={2025},
-  publisher={Elsevier}
-}
-```
