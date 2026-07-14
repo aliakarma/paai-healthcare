@@ -23,21 +23,26 @@
 - **Feature availability**: Not all EHR variables may be available in external datasets (time-to-implementation risk)
 - **No real-world feedback loop**: MIMIC-IV validation uses logged data, not prospective intervention
 
-### 4. Reinforcement Learning Constraints
+### 4. Real Wearable Dataset (OhioT1DM, WESAD, PPG-DaLiA) Limitations
+- **Retrospective offline evaluation**: The validation on real datasets uses windowed static data features rather than running the active closed-loop Gymnasium `PatientEnv`. Direct prospective clinical testing is required.
+- **Sensor quality and dropouts**: Wearable telemetry is subject to significant noise, artifacts, and packet loss, which require extensive preprocessing (Algorithm 1) in real deployment.
+- **Labeling proxy**: Ground-truth labels for risks (such as diabetic risk in OhioT1DM) are derived using physiological thresholds and future windowed alerts rather than direct physician clinical notes.
+
+### 5. Reinforcement Learning Constraints
 - **Sample efficiency**: RL policy requires ~2M environment steps (500 patients × 12 months × timesteps); 
   not immediately deployable without significant clinical validation period
 - **Generalization**: Policy trained on MIMIC-IV demographics may have performance drift on different populations 
   (e.g., pediatric, geriatric, different ethnic backgrounds)
 - **Partial observability**: Real-world patient state may have unmeasured confounders not captured in feature vector
 
-### 5. Human-in-the-Loop Limitations
+### 6. Human-in-the-Loop Limitations
 - **Feedback loop lag**: Tier 2 clinician overrides only integrated during weekly offline policy update; 
   no real-time closed-loop adaptation
 - **Scalability**: Three-tier governance requires clinical staffing; may not scale to millions of patients
 - **Clinician compliance**: System effectiveness depends on clinician engagement in feedback loops; 
   implementation burden not quantified
 
-### 6. Privacy & Security Scope
+### 7. Privacy & Security Scope
 - **Implementation-level privacy**: Code uses standard cryptography (AES-256, SHA-256); 
   no differential privacy or formal privacy guarantees provided
 - **Audit log integrity**: Hash-chaining prevents tampering but does not prevent unauthorized access; 

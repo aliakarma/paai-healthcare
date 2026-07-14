@@ -36,6 +36,7 @@ Authors receive no funding for this research.
 ### Computational Resources
 - Synthetic experiments: University computing cluster (8× CPU, 32 GB RAM, 50 GB SSD per run)
 - MIMIC-IV processing: Single 16-core workstation, ~2 weeks cumulative runtime
+- Real wearable dataset processing (WESAD, PPG-DaLiA, OhioT1DM): Commodity desktop/workstation CPUs, <30 minutes cumulative runtime
 - RL training: GPU acceleration not required; CPU experiments reproduced on commodity hardware
 
 **Funders Had No Role**: In study design, data collection/analysis, writing decisions, or publication choice.
@@ -66,6 +67,7 @@ All dependencies are properly cited in `requirements.txt` and `CITATION.cff`.
 
 ### Data Sharing
 - **Synthetic data**: Fully reproducible, no restrictions
+- **Real wearable data**: Processed windowed features and train/test splits are committed in this repository. Raw dataset access is open-access but requires PhysioNet credentials (OhioT1DM) or download from UCI Repositories (WESAD, PPG-DaLiA)
 - **MIMIC-IV derivatives**: Original DUA restricts sharing; scripts provided for obtaining access
 - **Knowledge graphs**: Public sources (DrugBank, ADA/AHA) — derivatives available under same licenses
 

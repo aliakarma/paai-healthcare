@@ -59,6 +59,39 @@ The following aggregate statistics may be shared without DUA violation:
 
 ---
 
+## Real-World Wearable Benchmarks (OhioT1DM, WESAD, PPG-DaLiA)
+
+**Availability**: Open-access (registration/agreement required for OhioT1DM via PhysioNet; public via UCI Repository for WESAD and PPG-DaLiA).
+
+### Access Method
+1. **OhioT1DM**: Request access via PhysioNet: [physionet.org/content/ohiot1dm/](https://physionet.org/content/ohiot1dm/)
+2. **WESAD**: Download from UCI Machine Learning Repository: [archive.ics.uci.edu/dataset/465/wesad](https://archive.ics.uci.edu/dataset/465/wesad)
+3. **PPG-DaLiA**: Download from UCI Machine Learning Repository: [archive.ics.uci.edu/dataset/495/ppg+dalia](https://archive.ics.uci.edu/dataset/495/ppg+dalia)
+
+### Dataset Handling
+* **Raw files (zips/directories) NOT committed** due to size. Raw files should be placed in `data/real/` before running evaluations.
+* **Processed CSV tables & train/test splits** are fully open-source and included in the repository.
+
+### Output Format
+```
+data/real/
+├── OhioT1DM/                     # Raw Ohio XML files (local only)
+├── WESAD.zip                     # Raw WESAD zip file (local only)
+├── PPG_FieldStudy.zip            # Raw PPG-DaLiA zip file (local only)
+└── processed/                    # Processed CSV tables and splits (committed)
+    ├── ohiot1dm_dataset.csv      # OhioT1DM aggregated features
+    ├── ohiot1dm_train_split.csv
+    ├── ohiot1dm_test_split.csv
+    ├── wesad_dataset.csv         # WESAD aggregated features
+    ├── wesad_train_split.csv
+    ├── wesad_test_split.csv
+    ├── ppg_dalia_dataset.csv     # PPG-DaLiA aggregated features
+    ├── ppg_dalia_train_split.csv
+    └── ppg_dalia_test_split.csv
+```
+
+---
+
 ## RL Policy Checkpoints
 
 **Availability**: Generated locally by training. No checkpoint binaries are committed to this repository by default.

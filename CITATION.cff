@@ -17,21 +17,6 @@ authors:
   - family-names: Akarma
     given-names: Ali
     affiliation: "Faculty of Computer and Information System, Islamic University of Madinah"
-  - family-names: Ali
-    given-names: Ahmad
-    affiliation: "Faculty of Computer and Information System, Islamic University of Madinah"
-  - family-names: Lee
-    given-names: It Ee
-    affiliation: "Multimedia University, Cyberjaya"
-  - family-names: Jan
-    given-names: Salman
-    affiliation: "Arab Open University, Bahrain"
-  - family-names: Khan
-    given-names: Sohail
-    affiliation: "Effat University, Jeddah"
-  - family-names: Nauman
-    given-names: Muhammad
-    affiliation: "Effat University, Jeddah"
 repository-code: "https://github.com/aliakarma/paai-healthcare"
 license: Apache-2.0
 version: "1.0.0"

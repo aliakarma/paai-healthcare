@@ -15,6 +15,13 @@ data/mimic/raw/
 data/mimic/extracted/vitals_mimic.csv
 data/mimic/extracted/events_mimic.csv
 
+# Real-world wearable datasets — raw files (local only)
+data/real/OhioT1DM/
+data/real/WESAD.zip
+data/real/PPG_FieldStudy.zip
+data/real/WESAD/
+data/real/PPG_FieldStudy/
+
 # RL training artefacts (distribute via GitHub Releases)
 rl/checkpoints/*.zip
 rl/checkpoints/best/
@@ -22,6 +29,7 @@ rl/tensorboard/
 
 # Evaluation outputs
 evaluation/results/
+!evaluation/results/real/
 
 # Encryption keys
 *.key
@@ -38,3 +46,4 @@ notebooks/.ipynb_checkpoints/
 coverage.xml
 .coverage
 htmlcov/
+/Paper

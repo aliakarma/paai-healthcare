@@ -43,6 +43,7 @@ pingouin==0.5.4
 # Utilities
 tqdm>=4.66
 joblib==1.4.0
+pillow==10.3.0
 
 # Jupyter notebooks
 jupyter==1.0.0
